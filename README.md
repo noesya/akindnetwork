@@ -39,7 +39,7 @@ The 4 navigation buttons are **fixed at the 4 corners** (desktop):
 
 The "Kind" wordmark only appears centered on the home page.
 
-## What this prototype does NOT do (next phases — see [ARCHITECTURE.md](./ARCHITECTURE.md))
+## What this prototype does NOT do (next phases — see [ARCHITECTURE.md](./docs/ARCHITECTURE.md))
 
 - No real ActivityPods backend (mock data in `src/data/mock.ts`)
 - No real auth / Solid login (Alice is hardcoded)
