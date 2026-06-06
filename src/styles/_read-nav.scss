@@ -2,20 +2,20 @@
 
 .read-nav {
   max-width: var(--max-page);
-  margin: 0 auto var(--space-6);
+  margin: 0 auto var(--space-7);
   width: 100%;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   padding: 0 var(--space-2);
   font-size: 13px;
   color: var(--color-text-muted);
 
+  > * {
+    min-width: 100px;
+  }
+
   &__arrow {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-2);
-    color: var(--color-text);
     text-decoration: none;
 
     &:hover {
@@ -25,5 +25,9 @@
 
   &__counter {
     font-family: var(--font-sans);
+    text-align: center;
+  }
+  &__next {
+    text-align: right;
   }
 }

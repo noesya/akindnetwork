@@ -24,21 +24,25 @@ export default function LetterPage() {
   return (
     <>
       <nav className="read-nav">
-        {prevId ? (
-          <Link to={`/read/${prevId}`} className="read-nav__arrow">
-            ← précédente
-          </Link>
-        ) : (
-          <span />
-        )}
+        <span className="read-nav__previous">
+          {prevId ? (
+            <Link to={`/read/${prevId}`} className="read-nav__arrow">
+              ← précédente
+            </Link>
+          ) : (
+            <></>
+          )}
+        </span>
         <span className="read-nav__counter">{idx + 1} / {letters.length}</span>
-        {nextId ? (
-          <Link to={`/read/${nextId}`} className="read-nav__arrow">
-            suivante →
-          </Link>
-        ) : (
-          <span />
-        )}
+        <span className="read-nav__next">
+          {nextId ? (
+            <Link to={`/read/${nextId}`} className="read-nav__arrow">
+              suivante →
+            </Link>
+          ) : (
+            <></>
+          )}
+        </span>
       </nav>
       <LetterView letter={letter} />
       <Thread comments={letterComments} />

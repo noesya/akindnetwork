@@ -21,7 +21,7 @@
 
 .comment {
   display: grid;
-  grid-template-columns: 240px 1fr 280px;
+  grid-template-columns: 1fr 2fr 1fr;
   gap: var(--space-7);
   padding: var(--space-5) 0;
   align-items: start;

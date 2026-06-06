@@ -27,10 +27,10 @@
       text-underline-offset: 4px;
     }
 
-    &--tl { top: var(--space-5); left: var(--space-5); }
-    &--tr { top: var(--space-5); right: var(--space-5); }
-    &--bl { bottom: var(--space-5); left: var(--space-5); }
-    &--br { bottom: var(--space-5); right: var(--space-5); }
+    &--tl { top: var(--space-2); left: var(--space-2); }
+    &--tr { top: var(--space-2); right: var(--space-2); }
+    &--bl { bottom: var(--space-2); left: var(--space-2); }
+    &--br { bottom: var(--space-2); right: var(--space-2); }
   }
 }
 
