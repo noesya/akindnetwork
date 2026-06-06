@@ -1,0 +1,90 @@
+{
+  "nav": {
+    "read": "Lire",
+    "write": "Écrire",
+    "about": "À propos",
+    "me": "Moi"
+  },
+  "letter": {
+    "by": "Par",
+    "writtenOn": "Écrit le",
+    "inResponseTo": "En réponse à",
+    "when": "Quand ?",
+    "about": "À propos ?",
+    "approvedBy": "Approuvée par",
+    "sources": "Sources ?",
+    "status": "Statut",
+    "respondPublicly": "Répondre publiquement",
+    "writeToAuthor": "Écrire à {{name}}",
+    "byAuthor": "par {{name}}",
+    "contribute": "Contribuer"
+  },
+  "editor": {
+    "newLetter": "Nouvelle lettre",
+    "writeIntro": "Écrivez une nouvelle lettre, pas plus de 500 mots.",
+    "title": "Titre",
+    "text": "Texte",
+    "saveDraft": "Enregistrer en brouillon",
+    "sendForReview": "Envoyer en relecture",
+    "wordsLeft": "{{count}} mots restants"
+  },
+  "limit": {
+    "todayLabel": "Aujourd'hui",
+    "actions": "{{used}}/{{max}} actions"
+  },
+  "closed": {
+    "title": "Le réseau est fermé",
+    "subtitle": "Les écritures sont en pause de 22h à 7h dans votre fuseau horaire.",
+    "comeBack": "Revenez après 7h pour écrire."
+  },
+  "about": {
+    "title": "A kind network",
+    "subtitle": "Réseau social post-croissance",
+    "keyElementsTitle": "Éléments clés",
+    "items": {
+      "perDay": { "title": "17 par jour", "body": "Maximum 17 actions par jour, comme les 17 syllabes d'un haïku." },
+      "noScroll": { "title": "Pas de scroll", "body": "On lit un texte à la fois, suivi des réponses." },
+      "peerReviewed": { "title": "Validé par les pairs", "body": "La modération se fait a priori, par les pairs." },
+      "sourced": { "title": "Sourcé", "body": "Les textes sont présentés et annotés avec contexte & références." },
+      "singleFeatured": { "title": "Mono-fonctionnel", "body": "Pas de job board, de quiz, etc. Juste un lieu de discussion." },
+      "noAds": { "title": "Sans publicité", "body": "Un réseau communautaire, libre et open source." },
+      "interoperable": { "title": "Interopérable", "body": "Infrastructure ouverte et standard." },
+      "nig": { "title": "NIG compliant", "body": "S'inscrit dans le cadre du Numérique d'Intérêt Général." },
+      "collective": { "title": "Conçu pour l'intelligence collective", "body": "" }
+    },
+    "pillarsTitle": "Structure de la page",
+    "pillars":{
+      "who": {
+        "title": "Quelle personne ?",
+        "sub": "Ce que je suis",
+        "detail": "D'où je parle ? Quelles sont mes croyances ? Quelles sont mes opinions ?"
+      },
+      "what": {
+        "title": "Quel propos ?",
+        "sub": "Ce que je dis",
+        "detail": "À propos de quoi ? Sur quel thème ? Dans quel temps ?"
+      },
+      "proof": {
+        "title": "Quelles preuves ?",
+        "sub": "Ce que je sais",
+        "detail": "Les sources, la traçabilité, les précisions contextuelles (fact-checking)"
+      }
+    }
+  },
+  "me": {
+    "title": "Moi",
+    "drafts": "Brouillons",
+    "inReview": "En relecture",
+    "published": "Publiées",
+    "toReview": "À relire pour les pairs",
+    "emptyDrafts": "Aucun brouillon pour l'instant.",
+    "emptyReview": "Rien à relire.",
+    "languageLabel": "Langue"
+  },
+  "language": {
+    "switch": "EN"
+  },
+  "source": {
+    "open": "Ouvrir la source"
+  }
+}

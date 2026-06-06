@@ -1,0 +1,23 @@
+// Small helper classes used across the app.
+
+.label {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-2);
+}
+
+.muted {
+  color: var(--color-text-muted);
+}
+
+.serif {
+  font-family: var(--font-serif);
+}
+
+.divider {
+  height: 1px;
+  background: var(--color-line);
+  border: none;
+  margin: var(--space-6) 0;
+}

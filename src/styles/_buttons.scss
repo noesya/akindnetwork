@@ -1,0 +1,24 @@
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  color: var(--color-text);
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: #efd8d3;
+  }
+
+  &--ghost {
+    background: transparent;
+    border: 1px solid var(--color-line);
+
+    &:hover {
+      background: var(--color-surface-soft);
+    }
+  }
+}

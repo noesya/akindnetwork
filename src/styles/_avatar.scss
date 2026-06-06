@@ -1,0 +1,25 @@
+.avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  color: white;
+  flex-shrink: 0;
+  user-select: none;
+
+  &--sm {
+    width: 36px;
+    height: 36px;
+    font-size: 13px;
+  }
+
+  &--lg {
+    width: 80px;
+    height: 80px;
+    font-size: 22px;
+  }
+}

@@ -1,0 +1,83 @@
+// Local font files served from /public/fonts.
+// Adelphe Floréal — Eugénie Bidaut, OFL 1.1 (gitlab.com/bye-bye-binary/adelphe).
+// Bricolage Grotesque — Mathieu Triay / Atelier Triay, OFL 1.1.
+
+@font-face {
+  font-family: "Adelphe Floreal";
+  src:
+    url("/fonts/Adelphe-FlorealRegular.woff2") format("woff2"),
+    url("/fonts/Adelphe-FlorealRegular.woff") format("woff");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Adelphe Floreal";
+  src:
+    url("/fonts/Adelphe-FlorealItalic.woff2") format("woff2"),
+    url("/fonts/Adelphe-FlorealItalic.woff") format("woff");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Adelphe Floreal";
+  src:
+    url("/fonts/Adelphe-FlorealBold.woff2") format("woff2"),
+    url("/fonts/Adelphe-FlorealBold.woff") format("woff");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Adelphe Floreal";
+  src:
+    url("/fonts/Adelphe-FlorealBoldItalic.woff2") format("woff2"),
+    url("/fonts/Adelphe-FlorealBoldItalic.woff") format("woff");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Bricolage Grotesque";
+  src: url("/fonts/bricolage-grotesque-v9-latin-200.woff2") format("woff2");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Bricolage Grotesque";
+  src: url("/fonts/bricolage-grotesque-v9-latin-300.woff2") format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Bricolage Grotesque";
+  src: url("/fonts/bricolage-grotesque-v9-latin-regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Bricolage Grotesque";
+  src: url("/fonts/bricolage-grotesque-v9-latin-600.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Bricolage Grotesque";
+  src: url("/fonts/bricolage-grotesque-v9-latin-700.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}

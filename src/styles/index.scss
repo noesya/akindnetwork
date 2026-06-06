@@ -1,0 +1,25 @@
+// Kind — stylesheet entry point.
+// Organised by concern; each partial owns one component or one cross-cutting layer.
+// Tokens come first (CSS custom properties), fonts next, then progressively
+// specific layers. Responsive overrides come last so they win the cascade.
+
+@use 'tokens';
+@use 'fonts';
+@use 'reset';
+@use 'base';
+@use 'buttons';
+@use 'utilities';
+
+@use 'layout';
+@use 'home';
+@use 'avatar';
+@use 'letter';
+@use 'thread';
+@use 'source-modal';
+@use 'editor';
+@use 'about';
+@use 'me';
+@use 'closed-notice';
+@use 'read-nav';
+
+@use 'responsive';

@@ -1,0 +1,85 @@
+// Source preview modal, opened from a sidebar source link.
+
+.source-modal {
+  background: var(--color-bg);
+  border-radius: var(--radius-md);
+  max-width: 720px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  padding: var(--space-7);
+
+  &__backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 20, 20, 0.45);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: var(--space-5);
+  }
+
+  &__close {
+    position: absolute;
+    top: var(--space-4);
+    right: var(--space-4);
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-soft);
+    font-size: 18px;
+
+    &:hover {
+      background: var(--color-surface);
+    }
+  }
+
+  &__header {
+    text-align: center;
+    margin-bottom: var(--space-6);
+  }
+
+  &__publisher {
+    font-family: var(--font-serif);
+    font-size: 26px;
+    margin-bottom: var(--space-2);
+  }
+
+  &__tagline {
+    font-size: 13px;
+    color: var(--color-text-muted);
+  }
+
+  &__card {
+    background: var(--color-bg);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-md);
+    padding: var(--space-5);
+  }
+
+  &__author {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+  }
+
+  &__body p {
+    font-family: var(--font-serif);
+    font-size: 17px;
+    line-height: 1.6;
+    margin-bottom: var(--space-3);
+  }
+
+  &__link {
+    margin-top: var(--space-5);
+    display: inline-block;
+    font-size: 14px;
+  }
+}

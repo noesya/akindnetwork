@@ -1,0 +1,29 @@
+// Previous/next navigation row at the top of the Read page.
+
+.read-nav {
+  max-width: var(--max-page);
+  margin: 0 auto var(--space-6);
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-2);
+  font-size: 13px;
+  color: var(--color-text-muted);
+
+  &__arrow {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--color-text);
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  &__counter {
+    font-family: var(--font-sans);
+  }
+}

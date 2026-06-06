@@ -1,0 +1,30 @@
+// Desktop-first layout. Below 1000px we collapse all 3-column grids
+// and ease the page padding. Mobile-specific work is intentionally postponed.
+
+@media (max-width: 1000px) {
+  .letter-view,
+  .comment,
+  .editor {
+    grid-template-columns: 1fr;
+    gap: var(--space-5);
+  }
+
+  .letter-view__author,
+  .letter-view__sidebar,
+  .editor__meta {
+    position: static;
+  }
+
+  .about__grid,
+  .about__pillars {
+    grid-template-columns: 1fr;
+  }
+
+  .about__hero-title {
+    font-size: 56px;
+  }
+
+  .layout {
+    padding: var(--space-4);
+  }
+}

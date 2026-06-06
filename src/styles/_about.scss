@@ -1,0 +1,106 @@
+// Manifesto / About page. Hero, the 9 key-element cards, and the 3 pillars.
+
+.about {
+  max-width: var(--max-page);
+  margin: var(--space-7) auto;
+  width: 100%;
+
+  &__title {
+    font-size: 56px;
+    line-height: 1.05;
+    margin-bottom: var(--space-7);
+    letter-spacing: -0.07em;
+  }
+
+  &__hero {
+    text-align: center;
+    margin-bottom: var(--space-8);
+    padding: var(--space-7) 0 var(--space-5);
+  }
+
+  &__hero-title {
+    font-size: 88px;
+    font-weight: 300;
+    margin-bottom: var(--space-3);
+    line-height: 1;
+  }
+
+  &__hero-sub {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 22px;
+    color: var(--color-text-muted);
+  }
+
+  &__section-title {
+    font-family: var(--font-serif);
+    font-size: 44px;
+    margin-bottom: var(--space-7);
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-4);
+  }
+
+  &__card {
+    background: var(--color-surface);
+    border-radius: var(--radius-md);
+    padding: var(--space-6);
+    min-height: 220px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__card-title {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 18px;
+    margin-bottom: var(--space-4);
+  }
+
+  &__card-body {
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  &__pillars {
+      &__grid {
+        display: grid;
+        grid-template-columns: 1fr 2fr 1fr;
+        gap: var(--space-4);
+        margin: var(--space-8) auto;
+    }
+  }
+  &__pillar {
+    background: var(--color-surface);
+    border-radius: var(--radius-md);
+    padding: var(--space-7) var(--space-5);
+    min-height: 360px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  &__pillar-title {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 22px;
+    margin-bottom: var(--space-3);
+  }
+
+  &__pillar-sub {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 22px;
+    margin-bottom: var(--space-7);
+  }
+
+  &__pillar-detail {
+    font-size: 14px;
+    color: var(--color-text);
+    line-height: 1.7;
+  }
+}

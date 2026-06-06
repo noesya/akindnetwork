@@ -1,0 +1,90 @@
+{
+  "nav": {
+    "read": "Read",
+    "write": "Write",
+    "about": "About",
+    "me": "Me"
+  },
+  "letter": {
+    "by": "By",
+    "writtenOn": "Written on",
+    "inResponseTo": "In response to",
+    "when": "When?",
+    "about": "About?",
+    "approvedBy": "Approved by",
+    "sources": "Sources?",
+    "status": "Status",
+    "respondPublicly": "Respond publicly",
+    "writeToAuthor": "Write to {{name}}",
+    "byAuthor": "by {{name}}",
+    "contribute": "Contribute"
+  },
+  "editor": {
+    "newLetter": "New letter",
+    "writeIntro": "Write a new letter, no more than 500 words.",
+    "title": "Title",
+    "text": "Text",
+    "saveDraft": "Save as draft",
+    "sendForReview": "Send for peer review",
+    "wordsLeft": "{{count}} words left"
+  },
+  "limit": {
+    "todayLabel": "Today",
+    "actions": "{{used}}/{{max}} actions"
+  },
+  "closed": {
+    "title": "The newtork is closed",
+    "subtitle": "Writing is paused between 10pm and 7am in your timezone.",
+    "comeBack": "Come back after 7am to write."
+  },
+  "about": {
+    "title": "A kind netwwork",
+    "subtitle": "Post-growth social network",
+    "keyElementsTitle": "Key elements",
+    "items": {
+      "perDay": { "title": "17 per day", "body": "A maximum of 17 actions a day, as the number of syllables in a Haiku." },
+      "noScroll": { "title": "No scroll", "body": "Reading happens 1 text at a time, followed by the answers." },
+      "peerReviewed": { "title": "Peer reviewed", "body": "Moderation happens a priori, by the peers." },
+      "sourced": { "title": "Sourced", "body": "Texts are presented and annotated with context & references." },
+      "singleFeatured": { "title": "Single-featured", "body": "No job board, training, quiz, whatever… Just a place to discuss with peers." },
+      "noAds": { "title": "No advertising", "body": "Just a community driven, open source network." },
+      "interoperable": { "title": "Interoperable", "body": "Uses open, interoperable infrastructure." },
+      "nig": { "title": "NIG compliant", "body": "Fully embraces the NIG framework for Numérique d'Intérêt Général." },
+      "collective": { "title": "Built for Collective Intelligence", "body": "" }
+    },
+    "pillarsTitle": "Page structure",
+    "pillars":{
+      "who": {
+        "title": "Who?",
+        "sub": "Who I aml",
+        "detail": "Where am I speaking from? What are my beliefs? What are my views?"
+      },
+      "what": {
+        "title": "What?",
+        "sub": "What I say",
+        "detail": "What is it about? What is the topic? In what tense?"
+      },
+      "proof": {
+        "title": "Proof?",
+        "sub": "What I know",
+        "detail": "Sources, traceability, contextual details (fact-checking)"
+      }
+    }
+  },
+  "me": {
+    "title": "Me",
+    "drafts": "Drafts",
+    "inReview": "In review",
+    "published": "Published",
+    "toReview": "Peers to review",
+    "emptyDrafts": "No drafts yet.",
+    "emptyReview": "Nothing to review.",
+    "languageLabel": "Language"
+  },
+  "language": {
+    "switch": "FR"
+  },
+  "source": {
+    "open": "Open source"
+  }
+}

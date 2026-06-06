@@ -1,0 +1,87 @@
+// Letter composer. Same 3-column grid as .letter-view for visual continuity.
+// The textarea uses a repeating linear gradient to mimic lined paper.
+
+.editor {
+  max-width: var(--max-page);
+  margin: var(--space-7) auto;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 240px 1fr 280px;
+  gap: var(--space-7);
+  align-items: start;
+
+  &__meta {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+    font-size: 13px;
+  }
+
+  &__main {
+    font-family: var(--font-serif);
+  }
+
+  &__title-input {
+    width: 100%;
+    font-family: var(--font-serif);
+    font-size: 40px;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    border: none;
+    outline: none;
+    background: transparent;
+    margin-bottom: var(--space-6);
+    padding: 0 0 var(--space-3);
+    border-bottom: 1px solid var(--color-line);
+
+    &:focus {
+      border-bottom-color: var(--color-text);
+    }
+  }
+
+  &__body-input {
+    width: 100%;
+    font-family: var(--font-serif);
+    font-size: 18px;
+    line-height: 1.6;
+    border: none;
+    outline: none;
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent,
+      transparent calc(1.6em - 1px),
+      var(--color-line) calc(1.6em - 1px),
+      var(--color-line) 1.6em
+    );
+    resize: vertical;
+    min-height: 320px;
+    padding: 0;
+  }
+
+  &__actions {
+    display: flex;
+    gap: var(--space-3);
+    margin-top: var(--space-6);
+    align-items: center;
+  }
+
+  &__count {
+    margin-left: auto;
+    font-size: 13px;
+    color: var(--color-text-muted);
+  }
+
+  &__label {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-1);
+  }
+
+  &__hint {
+    font-family: var(--font-serif);
+    color: var(--color-text-muted);
+    font-size: 22px;
+    margin-bottom: var(--space-5);
+  }
+}

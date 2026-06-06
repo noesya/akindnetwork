@@ -1,0 +1,88 @@
+// Letter reading view: 3 columns on desktop (author | content | metadata).
+// The sidebar fields are a tiny helper used by both letter and thread.
+
+.letter-view {
+  display: grid;
+  grid-template-columns: 240px 1fr 280px;
+  gap: var(--space-7);
+  max-width: var(--max-page);
+  margin: var(--space-7) auto;
+  width: 100%;
+  align-items: start;
+
+  &__author {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    position: sticky;
+    top: var(--space-5);
+  }
+
+  &__author-name {
+    font-family: var(--font-serif);
+    font-size: 24px;
+    margin-top: var(--space-3);
+  }
+
+  &__author-bio {
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--color-text-muted);
+  }
+
+  &__content {
+    font-family: var(--font-serif);
+  }
+
+  &__title {
+    font-size: 40px;
+    line-height: 1.15;
+    margin-bottom: var(--space-7);
+    letter-spacing: -0.01em;
+  }
+
+  &__body p {
+    font-size: 18px;
+    line-height: 1.6;
+    margin-bottom: var(--space-5);
+  }
+
+  &__sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+    font-size: 13px;
+    position: sticky;
+    top: var(--space-5);
+  }
+
+  &__actions {
+    display: flex;
+    gap: var(--space-3);
+    margin-top: var(--space-7);
+  }
+
+  &__map {
+    margin-top: var(--space-6);
+    width: 100%;
+    height: auto;
+    border-radius: var(--radius-md);
+  }
+}
+
+.sidebar-field {
+  &__label {
+    color: var(--color-text-muted);
+    font-family: var(--font-sans);
+    margin-bottom: var(--space-1);
+  }
+
+  &__value {
+    font-family: var(--font-sans);
+    line-height: 1.5;
+
+    a {
+      color: var(--color-text);
+    }
+  }
+}
