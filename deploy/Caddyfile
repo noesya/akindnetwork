@@ -44,14 +44,29 @@ www.akindnetwork.org {
 # ---------------------------------------------------------------------------
 api.akindnetwork.org {
     encode zstd gzip
-    reverse_proxy moleculer:3000
+
+    # Moleculer-Web emits its own CORS headers, with `*` for the origin. Combined
+    # with ours (specific origin), the browser sees two `Access-Control-Allow-Origin`
+    # headers and rejects the response. We strip every upstream CORS header
+    # before the reverse_proxy returns, then add our own controlled set below.
+    reverse_proxy moleculer:3000 {
+        header_down -Access-Control-Allow-Origin
+        header_down -Access-Control-Allow-Methods
+        header_down -Access-Control-Allow-Headers
+        header_down -Access-Control-Allow-Credentials
+        header_down -Access-Control-Expose-Headers
+        header_down -Access-Control-Max-Age
+        header_down -Vary
+    }
 
     @cors_preflight method OPTIONS
     handle @cors_preflight {
         header {
             Access-Control-Allow-Origin "https://akindnetwork.org"
-            Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, OPTIONS"
-            Access-Control-Allow-Headers "Authorization, Content-Type, Accept"
+            Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS"
+            # LDP/Solid headers commonly sent by SemApps clients in addition
+            # to the basics. Without these listed, the preflight fails.
+            Access-Control-Allow-Headers "Authorization, Content-Type, Accept, Slug, Link, Prefer, If-Match, If-None-Match"
             Access-Control-Allow-Credentials "true"
             Access-Control-Max-Age "86400"
         }
@@ -61,6 +76,10 @@ api.akindnetwork.org {
     header {
         Access-Control-Allow-Origin "https://akindnetwork.org"
         Access-Control-Allow-Credentials "true"
+        # Expose headers SemApps clients READ from cross-origin responses
+        # (the `Link` header carries ACL pointers, `Location` carries new
+        # resource URIs after POST).
+        Access-Control-Expose-Headers "Location, Link, Allow, ETag"
         Vary "Origin"
         X-Content-Type-Options "nosniff"
         Referrer-Policy "strict-origin-when-cross-origin"
