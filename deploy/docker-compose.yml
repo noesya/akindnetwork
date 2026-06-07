@@ -60,10 +60,13 @@ services:
       start_period: 30s
 
   fuseki:
-    image: stain/jena-fuseki:5.0.0
+    # SemApps' Fuseki distribution: stain/jena-fuseki + jena-permissions module
+    # pre-installed (required by @semapps/triplestore to create the "secure
+    # datasets" used for WebACL row-level access control). Pinned to v1.0.0
+    # rather than :latest so deploys are reproducible.
+    image: semapps/jena-fuseki-webacl:v1.0.0
     restart: unless-stopped
     environment:
-      # Read from /opt/kind/.env. NEVER commit a real password.
       ADMIN_PASSWORD: ${FUSEKI_ADMIN_PASSWORD}
       JVM_ARGS: -Xmx1g
     volumes:

@@ -4,7 +4,9 @@
 
 services:
   fuseki:
-    image: stain/jena-fuseki:5.0.0
+    # Same image as prod (deploy/docker-compose.yml) — includes jena-permissions
+    # required by @semapps/triplestore for WebACL secure datasets.
+    image: semapps/jena-fuseki-webacl:v1.0.0
     container_name: kind-fuseki
     # Bound to loopback only. This is a dev stack — no reason to expose Fuseki
     # to the LAN/wifi we're sitting on.

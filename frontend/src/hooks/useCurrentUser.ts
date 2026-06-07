@@ -42,9 +42,18 @@ export function useCurrentUser(): {
 }
 
 function extractName(webId: string): string {
+  // WebIDs come in two flavours on Solid providers:
+  //   path-based:      https://armoise.co/arnaudlevy
+  //   subdomain-based: https://alice.armoise.co/profile/card#me
+  // We try the path's first non-empty segment first (excluding common ones
+  // like `profile`); if absent, fall back to the leftmost subdomain.
   try {
     const u = new URL(webId);
-    return u.hostname.split('.')[0];
+    const COMMON = new Set(['profile', 'public', 'data', 'inbox', 'outbox']);
+    const seg = u.pathname.split('/').find((p) => p && !COMMON.has(p));
+    if (seg) return seg;
+    const sub = u.hostname.split('.')[0];
+    return sub;
   } catch {
     return webId;
   }
