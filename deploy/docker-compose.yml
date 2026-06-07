@@ -42,6 +42,11 @@ services:
       # Internal hostnames take precedence over .env values.
       SPARQL_ENDPOINT: http://fuseki:3030
       REDIS_URL: redis://redis:6379
+    volumes:
+      # HTTP-signature keypairs (one per ActivityPub actor) — must survive
+      # container restarts otherwise every redeploy invalidates federation
+      # identity for all users that ever connected.
+      - actors-data:/app/actors
     depends_on:
       fuseki:
         condition: service_healthy
@@ -89,3 +94,4 @@ volumes:
   caddy-config:
   fuseki-data:
   redis-data:
+  actors-data:

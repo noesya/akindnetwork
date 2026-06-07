@@ -1,0 +1,7 @@
+# This directory holds the HTTP signature keypairs for ActivityPub actors.
+# @semapps/crypto's keys service writes <actor-slug>/private.pem and public.pem
+# at runtime. The directory must exist before the service starts.
+#
+# TODO Phase 1+: mount this as a persistent volume in deploy/docker-compose.yml
+# so keypairs survive container restarts (otherwise every redeploy invalidates
+# all signed federation requests).
