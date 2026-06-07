@@ -14,6 +14,7 @@
     "start": "node server.js"
   },
   "dependencies": {
+    "@activitypods/react": "^2.2.0",
     "@semapps/activitypub-components": "^1.1.0-patch.1",
     "@semapps/auth-provider": "^1.1.0-patch.1",
     "@semapps/semantic-data-provider": "^1.1.0-patch.1",

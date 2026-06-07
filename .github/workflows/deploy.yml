@@ -48,6 +48,7 @@ jobs:
         env:
           VITE_FRONTEND_URL: ${{ vars.VITE_FRONTEND_URL }}
           VITE_DEFAULT_POD_PROVIDER: ${{ vars.VITE_DEFAULT_POD_PROVIDER }}
+          VITE_KIND_BACKEND_URL: ${{ vars.VITE_KIND_BACKEND_URL }}
 
       - name: Upload dist
         uses: actions/upload-artifact@v4

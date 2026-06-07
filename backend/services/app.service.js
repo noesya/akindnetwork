@@ -5,73 +5,64 @@ const { AppService } = require('@activitypods/app');
 /**
  * Kind — application service.
  *
- * The AppService mixin from @activitypods/app handles:
- *  - exposing the app manifest at /.well-known/...
- *  - OIDC Dynamic Client Registration with the user's Pod Provider
- *  - the consent screen (read from `accessNeeds` below)
- *  - storage and refresh of Apps Access Grants
+ * Aligned with activitypods/app-boilerplate (the canonical reference) for SAI
+ * compatibility. Three things matter here:
  *
- * What we declare here:
- *  1. The basic metadata users see on the consent screen.
- *  2. The data shapes we want to read/write in user Pods.
- *  3. The ActivityPub & WAC capabilities we need.
+ *  1. Shape trees are referenced by RESOLVABLE URLs. Pod Providers fetch them
+ *     during the consent screen, so unreachable URIs break the install flow.
+ *     We use the public shape repository at shapes.activitypods.org while we
+ *     bootstrap; later we'll host our own at api.akindnetwork.org and migrate.
  *
- * TODO: the `kind:` ontology registration is not done here. It needs its own
- * service that mixins `@semapps/ontologies` OntologiesService. See follow-up.
+ *  2. We do NOT set `name: 'app'` ourselves — let the mixin own that, so the
+ *     actor URI stays at <baseUrl>/app (and not /app12345 from prior collisions).
+ *
+ *  3. Permission tokens use the modern `apods:CreateWacGroup` / `Collection` /
+ *     `QuerySparqlEndpoint` names, not the deprecated CreateAclGroup.
  */
 module.exports = {
-  name: 'app',
   mixins: [AppService],
-
   settings: {
-    // The base URL where this app server is reachable (used in the manifest).
     baseUrl: process.env.APP_BASE_URL,
-
     app: {
-      name: 'Kind',
-      description: 'A kind network — peer-reviewed, federated, post-growth',
-      thumbnail: `${process.env.APP_BASE_URL || ''}/logo192.png`,
-      frontUrl: process.env.APP_FRONT_URL
+      name: 'A kind network',
+      description: 'A kind network — Peer-reviewed, federated, post-growth',
+      thumbnail: `${process.env.APP_FRONT_URL || ''}/images/logo192.png`,
+      frontUrl: process.env.APP_FRONT_URL,
+      supportedLocales: ['fr', 'en']
     },
-
     oidc: {
       clientUri: process.env.APP_FRONT_URL,
       redirectUris: `${process.env.APP_FRONT_URL}/auth-callback`,
       postLogoutRedirectUris: `${process.env.APP_FRONT_URL}/login?logout=true`,
-      tosUri: `${process.env.APP_FRONT_URL}/terms`
+      tosUri: null
     },
-
-    // Apps Access Grants — what we ask the user to authorise.
-    // Required: hard prerequisites for the app to work at all.
-    // Optional: features the user can grant later (none in v0).
     accessNeeds: {
       required: [
-        // Letters live in the user's Pod. We need both R and W.
+        // Letters are long-form notes — until we host our own kind:Letter
+        // shape tree, we reuse the public as:Note shape from the canonical
+        // ActivityPods shape repository.
         {
-          shapeTreeUri: `${process.env.APP_BASE_URL}/shapetrees/Letter`,
+          shapeTreeUri: 'https://shapes.activitypods.org/shapetrees/as/Note',
           accessMode: ['acl:Read', 'acl:Write']
         },
-        // Sources are first-class linked entities, also stored Pod-side.
+        // Read access to user profiles (other peers when displaying letters).
         {
-          shapeTreeUri: `${process.env.APP_BASE_URL}/shapetrees/Source`,
-          accessMode: ['acl:Read', 'acl:Write']
+          shapeTreeUri: 'https://shapes.activitypods.org/shapetrees/as/Profile',
+          accessMode: 'acl:Read'
         },
-        // Circles are interest groups — see KindCirclesService.
-        {
-          shapeTreeUri: `${process.env.APP_BASE_URL}/shapetrees/Circle`,
-          accessMode: ['acl:Read', 'acl:Write']
-        },
-        // ActivityPub plumbing — without these we can't federate.
+        // Inbox/outbox for federated letter delivery.
         'apods:ReadInbox',
         'apods:ReadOutbox',
         'apods:PostOutbox',
-        // WAC groups — needed by KindCirclesService to scope visibility.
-        'apods:CreateAclGroup'
-      ]
+        // SPARQL queries against the user's Pod (used by data provider).
+        'apods:QuerySparqlEndpoint',
+        // WAC groups back the Kind interest circles.
+        'apods:CreateWacGroup',
+        // Custom AS:Collection containers for app-specific listings.
+        'apods:CreateCollection'
+      ],
+      optional: []
     },
-
-    // Where the BullMQ job queue lives. Used by @activitypods/app internals
-    // for remote ActivityPub delivery.
-    queueServiceUrl: process.env.REDIS_URL
+    queueServiceUrl: process.env.QUEUE_SERVICE_URL || process.env.REDIS_URL
   }
 };
