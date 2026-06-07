@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import Logo from '../components/Logo';
 
 const keys = [
   'perDay',
@@ -24,11 +25,7 @@ export default function AboutPage() {
   return (
     <div className="about">
       <section className="about__hero">
-        <img
-          src="/images/logo-black.svg"
-          alt={t('about.title')}
-          className="about__hero-logo"
-        />
+        <Logo className="about__hero-logo" />
         <p className="about__hero-sub">{t('about.subtitle')}</p>
       </section>
 

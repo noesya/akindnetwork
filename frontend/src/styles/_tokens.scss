@@ -39,3 +39,24 @@
   --max-content: 720px;
   --max-page: 1920px;
 }
+
+// Dark mode — follows the user's OS preference. No JS toggle, no flash on load.
+// Only colour tokens are overridden; spacing, fonts, radii stay identical.
+//
+// We keep a hint of the brand's warm rose in `--color-surface-soft` (used by
+// buttons + manifesto cards) instead of going pure grey — so the dark mode
+// feels like Kind, not like a generic Material-dark theme.
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #0d0d0d;
+    --color-surface: #1a1a1a;
+    --color-surface-soft: #241a1a;
+    --color-text: #ededed;
+    --color-text-muted: #9a9a9a;
+    --color-text-faint: #5a5a5a;
+    --color-line: #2a2a2a;
+    --color-link: #ededed;
+    --color-accent: #ededed;
+  }
+}
+
