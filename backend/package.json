@@ -12,7 +12,7 @@
     "stack:logs": "docker compose logs -f"
   },
   "dependencies": {
-    "@activitypods/app": "2.1.0",
+    "@activitypods/app": "2.2.0",
     "@semapps/auth": "1.1.2",
     "@semapps/core": "1.1.2",
     "@semapps/crypto": "1.1.2",
