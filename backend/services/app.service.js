@@ -1,7 +1,6 @@
 'use strict';
 
 const { AppService } = require('@activitypods/app');
-const CoreService = require('./core/core.service');
 
 /**
  * Kind — application service.
@@ -16,12 +15,18 @@ const CoreService = require('./core/core.service');
  *  1. The basic metadata users see on the consent screen.
  *  2. The data shapes we want to read/write in user Pods.
  *  3. The ActivityPub & WAC capabilities we need.
+ *
+ * TODO: the `kind:` ontology registration is not done here. It needs its own
+ * service that mixins `@semapps/ontologies` OntologiesService. See follow-up.
  */
 module.exports = {
   name: 'app',
   mixins: [AppService],
 
   settings: {
+    // The base URL where this app server is reachable (used in the manifest).
+    baseUrl: process.env.APP_BASE_URL,
+
     app: {
       name: 'Kind',
       description: 'A kind network — peer-reviewed, federated, post-growth',
@@ -68,8 +73,5 @@ module.exports = {
     // Where the BullMQ job queue lives. Used by @activitypods/app internals
     // for remote ActivityPub delivery.
     queueServiceUrl: process.env.REDIS_URL
-  },
-
-  // Pull in the Kind ontology + shape trees the very first time the service starts.
-  dependencies: [CoreService.name]
+  }
 };
