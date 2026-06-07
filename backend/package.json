@@ -16,7 +16,10 @@
     "@semapps/auth": "1.1.2",
     "@semapps/core": "1.1.2",
     "@semapps/crypto": "1.1.2",
+    "@semapps/nodeinfo": "1.1.2",
+    "@semapps/ontologies": "1.1.2",
     "@semapps/solid": "1.1.2",
+    "@semapps/triplestore": "1.1.2",
     "dotenv": "^16.4.5",
     "ioredis": "^5.4.1",
     "moleculer": "^0.14.35",
@@ -26,20 +29,5 @@
   },
   "devDependencies": {
     "moleculer-repl": "^0.7.4"
-  },
-  "overrides": {
-    "@activitypods/app": "2.1.0",
-    "@semapps/activitypub": "1.1.2",
-    "@semapps/auth": "1.1.2",
-    "@semapps/core": "1.1.2",
-    "@semapps/crypto": "1.1.2",
-    "@semapps/ldp": "1.1.2",
-    "@semapps/middlewares": "1.1.2",
-    "@semapps/mime-types": "1.1.2",
-    "@semapps/nodeinfo": "1.1.2",
-    "@semapps/ontologies": "1.1.2",
-    "@semapps/solid": "1.1.2",
-    "@semapps/triplestore": "1.1.2",
-    "@semapps/webacl": "1.1.2"
   }
 }

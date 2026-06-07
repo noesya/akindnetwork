@@ -49,8 +49,8 @@
       "singleFeatured": { "title": "Mono-fonctionnel", "body": "Pas de job board, de quiz, etc. Juste un lieu de discussion." },
       "noAds": { "title": "Sans publicité", "body": "Un réseau communautaire, libre et open source." },
       "interoperable": { "title": "Interopérable", "body": "Infrastructure ouverte et standard." },
-      "nig": { "title": "NIG compliant", "body": "S'inscrit dans le cadre du Numérique d'Intérêt Général." },
-      "collective": { "title": "Conçu pour l'intelligence collective", "body": "" }
+      "nig": { "title": "NIG compliant", "body": "S'inscrit dans le cadre de référence NIG pour un Numérique d'Intérêt Général." },
+      "collective": { "title": "Conçu pour l'intelligence collective", "body": "Constructif, respectueux et lent." }
     },
     "pillarsTitle": "Structure",
     "pillars":{
