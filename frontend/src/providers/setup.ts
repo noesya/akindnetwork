@@ -76,13 +76,15 @@ const dataServers: Record<string, any> = {
   }
 };
 
-// SemApps' `Configuration` type marks several fields as required that the
-// runtime treats as optional (httpClient, plugins, ontologies-as-record). Cast
-// to `any` is intentional: the runtime accepts our config as-is.
+// SemApps' Configuration type marks `httpClient` and `plugins` as required.
+// `httpClient` defaults to fetch internally when omitted, but `plugins` is
+// iterated unconditionally at runtime — passing `undefined` throws
+// `TypeError: plugins is not iterable` from inside SemApps. Always pass [].
 export const dataProvider = buildDataProvider({
   dataServers,
   ontologies,
   resources,
+  plugins: [],
   jsonContext: ontologies.reduce<Record<string, string>>(
     (acc, o) => ((acc[o.prefix] = o.url), acc),
     {}
