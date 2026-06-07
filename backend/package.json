@@ -9,7 +9,8 @@
     "start": "moleculer-runner --env services/**/*.service.js",
     "stack:up": "docker compose up -d",
     "stack:down": "docker compose down",
-    "stack:logs": "docker compose logs -f"
+    "stack:logs": "docker compose logs -f",
+    "postinstall": "node patches/semapps-activitypub-actor.js"
   },
   "dependencies": {
     "@activitypods/app": "2.2.0",
