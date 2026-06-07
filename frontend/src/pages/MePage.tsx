@@ -1,12 +1,18 @@
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { currentUser, letters } from '../data/mock';
+import { useLogout } from 'ra-core';
+import { letters } from '../data/mock';
 import Avatar from '../components/Avatar';
+import { useCurrentUser } from '../hooks/useCurrentUser';
+import { isAuthConfigured } from '../providers/setup';
 
 export default function MePage() {
   const { t, i18n } = useTranslation();
+  const logout = useLogout();
+  const { user, isAuthenticated } = useCurrentUser();
+
   const myDrafts: typeof letters = [];
-  const myPublished = letters.filter((l) => l.authorId === currentUser.id);
+  const myPublished = letters.filter((l) => l.authorId === user.id);
 
   const changeLang = (lng: 'fr' | 'en') => {
     i18n.changeLanguage(lng);
@@ -16,12 +22,28 @@ export default function MePage() {
   return (
     <div className="me">
       <header className="me__header">
-        <Avatar user={currentUser} size="lg" />
+        <Avatar user={user} size="lg" />
         <div>
-          <div className="me__name">{currentUser.name}</div>
-          <div className="me__webid">{currentUser.webId}</div>
+          <div className="me__name">{user.name}</div>
+          <div className="me__webid">{user.webId}</div>
+          {user.isMock && (
+            <div className="me__mock-badge">{t('me.mockBadge')}</div>
+          )}
         </div>
       </header>
+
+      <section className="me__section">
+        <h2 className="me__section-title">{t('me.account')}</h2>
+        {isAuthenticated ? (
+          <button className="btn btn--ghost" onClick={() => logout()}>
+            {t('me.logout')}
+          </button>
+        ) : (
+          <Link to="/login" className="btn">
+            {isAuthConfigured ? t('me.connectPod') : t('me.connectPodDisabled')}
+          </Link>
+        )}
+      </section>
 
       <section className="me__section">
         <h2 className="me__section-title">{t('me.drafts')}</h2>
@@ -39,14 +61,18 @@ export default function MePage() {
 
       <section className="me__section">
         <h2 className="me__section-title">{t('me.published')}</h2>
-        {myPublished.map((l) => (
-          <Link key={l.id} to={`/read/${l.id}`} className="me__item">
-            <span>{l.title}</span>
-            <span className="me__item-meta">
-              {new Date(l.publishedAt).toLocaleDateString(i18n.language === 'fr' ? 'fr-FR' : 'en-GB')}
-            </span>
-          </Link>
-        ))}
+        {myPublished.length === 0 ? (
+          <p className="muted">{t('me.emptyPublished')}</p>
+        ) : (
+          myPublished.map((l) => (
+            <Link key={l.id} to={`/read/${l.id}`} className="me__item">
+              <span>{l.title}</span>
+              <span className="me__item-meta">
+                {new Date(l.publishedAt).toLocaleDateString(i18n.language === 'fr' ? 'fr-FR' : 'en-GB')}
+              </span>
+            </Link>
+          ))
+        )}
       </section>
 
       <section className="me__section">

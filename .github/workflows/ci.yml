@@ -1,0 +1,39 @@
+# Build & typecheck on every pull request and on push to main.
+# Cheap, fast, fails the merge if the frontend build is broken.
+
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build (with placeholder env)
+        run: npm run build
+        env:
+          VITE_FRONTEND_URL: https://akindnetwork.org
+          VITE_DEFAULT_POD_PROVIDER: https://armoise.co

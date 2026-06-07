@@ -24,7 +24,11 @@ export default function AboutPage() {
   return (
     <div className="about">
       <section className="about__hero">
-        <h1 className="about__hero-title">{t('about.title')}</h1>
+        <img
+          src="/images/logo-black.svg"
+          alt={t('about.title')}
+          className="about__hero-logo"
+        />
         <p className="about__hero-sub">{t('about.subtitle')}</p>
       </section>
 

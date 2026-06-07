@@ -1,54 +1,77 @@
 # A kind network
 
-## Run
+Monorepo : frontend Vite/React, backend Moleculer/ActivityPods, déploiement Docker via GitHub Actions sur VPS Infomaniak.
+
+```
+.
+├── frontend/      Vite + React 18 + TS + SemApps providers
+├── backend/       Moleculer + @activitypods/app
+├── deploy/        docker-compose + Caddyfile + bootstrap VPS
+├── docs/          ARCHITECTURE.md, Figma PDF, etc.
+└── .github/       workflows ci.yml + deploy.yml + setup-vps.yml
+```
+
+## Run frontend (dev)
 
 ```bash
+cd frontend
 npm install
 npm run dev
 ```
 
-Open http://localhost:5173.
+→ <http://localhost:5173>
 
-## Stack
+## Run backend (dev)
+
+```bash
+cd backend
+npm install
+npm run stack:up    # Fuseki + Redis via docker-compose
+npm run dev         # Moleculer hot-reload
+```
+
+Voir [`backend/README.md`](./backend/README.md) pour les détails (env vars, tunnel ngrok, etc.).
+
+## Stack frontend
 
 - **Vite + React 18 + TypeScript**
-- **React Router 6** for navigation
-- **react-i18next** for FR / EN (language toggled from the profile page)
-- Pure CSS (no Material-UI, no Tailwind) — see `src/styles/`
-- Fonts served locally from `public/fonts/`: **Adelphe Floréal** (serif) + **Bricolage Grotesque** (sans)
+- **React Router 6**
+- **react-i18next** (FR / EN, switchable depuis le profil)
+- **ra-core + SemApps providers** (`@semapps/auth-provider`, `@semapps/semantic-data-provider`) — pas de react-admin UI
+- CSS pur (Sass modulaire) — voir `frontend/src/styles/`
+- Fonts servies en local : Adelphe Floréal (serif) + Bricolage Grotesque (sans)
 
 ## Pages
 
-| Route | What it shows |
+| Route | Affiche |
 |---|---|
-| `/` | Home — "Kind" wordmark at the center, 4 corner buttons |
-| `/read` | First letter from mock inbox + sidebar + comments thread |
-| `/read/:id` | Specific letter by id |
-| `/write` | Empty composer (500 word cap, lined paper effect) |
-| `/write/:draftId` | Composer pre-filled as a response |
-| `/about` | Manifesto: 9 key elements + 3 pillars |
-| `/me` | Profile: drafts, published, peers to review, language preference |
+| `/` | Home — wordmark centré, 4 boutons aux coins |
+| `/read`, `/read/:id` | Lecture d'une lettre (auth requise) |
+| `/write`, `/write/:draftId` | Composer (auth requise) |
+| `/about` | Manifeste : 9 éléments clés + 3 piliers |
+| `/me` | Profil, brouillons, à relire, langue, login/logout Solid |
+| `/login`, `/auth-callback` | Flow Solid-OIDC |
 
-## Layout
+En mode **déconnecté**, seuls `À propos` et `Moi` sont visibles dans les coins. Lire et Écrire apparaissent une fois le Pod connecté.
 
-The 4 navigation buttons are **fixed at the 4 corners** (desktop):
-- Top-left: Lire
-- Top-right: Écrire
-- Bottom-left: À propos
-- Bottom-right: Moi
+## Deux modes
 
-The "Kind" wordmark only appears centered on the home page.
+**Demo** (par défaut) — pas de backend, données mockées dans `frontend/src/data/mock.ts`, badge "Demo — données fictives" sur `/me`.
 
-## What this prototype does NOT do (next phases — see [ARCHITECTURE.md](./docs/ARCHITECTURE.md))
+**Live** — quand `VITE_FRONTEND_URL` pointe sur une URL publique (le frontend déployé, ou un tunnel ngrok en dev), le login Solid s'active et les lettres viennent du Pod de l'utilisateur via SemApps.
 
-- No real ActivityPods backend (mock data in `src/data/mock.ts`)
-- No real auth / Solid login (Alice is hardcoded)
-- No peer review workflow
-- No 17/day rate limit enforcement (a gentle message will appear when reached, once implemented)
-- No 22h-7h closure logic
-- No real federation, no real WAC, no real sources fetch
+## Déploiement
 
-## Editing
+Cible : VPS Infomaniak Debian 13, stack Docker complète (Caddy + Moleculer + Oxigraph + Redis). Tout est piloté par GitHub Actions :
 
-Hot module reload works — save any file and the browser refreshes.
-TypeScript checking via `npm run build`.
+| Workflow | Déclencheur | Effet |
+|---|---|---|
+| `ci.yml` | PR / push | typecheck + build frontend |
+| `setup-vps.yml` | manuel | exécute `deploy/bootstrap.sh` sur le VPS (install Docker, ufw, hardening SSH) |
+| `deploy.yml` | push main | build frontend → rsync dist + backend + compose → `docker compose up -d --build` |
+
+Procédure complète dans [`deploy/README.md`](./deploy/README.md).
+
+## Architecture
+
+Voir [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) pour le détail des contraintes Kind (17/jour, peer review *a priori*, cercles, fermeture 22h-7h), du modèle de données (ontologie `kind:`, shape trees), des services Moleculer custom (PeerReview, Circles, RateLimit, TimeWindow) et du plan de phasing.

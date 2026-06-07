@@ -79,7 +79,25 @@
     "toReview": "À relire pour les pairs",
     "emptyDrafts": "Aucun brouillon pour l'instant.",
     "emptyReview": "Rien à relire.",
-    "languageLabel": "Langue"
+    "emptyPublished": "Aucune lettre publiée pour l'instant.",
+    "languageLabel": "Langue",
+    "account": "Compte",
+    "connectPod": "Connecter mon Pod",
+    "connectPodDisabled": "Auth non configurée — mode démo",
+    "logout": "Déconnexion",
+    "mockBadge": "Démo — données fictives"
+  },
+  "login": {
+    "title": "Connecter mon Pod",
+    "hint": "Saisissez l'adresse de votre fournisseur de Pod ActivityPods.",
+    "podProvider": "Fournisseur de Pod",
+    "connect": "Connecter",
+    "connecting": "Redirection…",
+    "cancel": "Annuler",
+    "back": "Retour",
+    "finishing": "Connexion en cours…",
+    "error": "Erreur de connexion",
+    "unconfigured": "L'authentification n'est pas encore configurée. Renseignez VITE_FRONTEND_URL dans le .env pour activer le login Solid."
   },
   "language": {
     "switch": "EN"

@@ -5,7 +5,11 @@ export default function HomePage() {
   return (
     <div className="home">
       <div className="home__inner">
-        <h1 className="home__wordmark">{t('about.title')}</h1>
+        <img
+          src="/images/logo-black.svg"
+          alt={t('about.title')}
+          className="home__wordmark"
+        />
         <p className="home__tagline">{t('about.subtitle')}</p>
       </div>
     </div>

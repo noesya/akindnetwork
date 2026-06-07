@@ -25,6 +25,13 @@
     letter-spacing: -0.07em;
   }
 
+  &__hero-logo {
+    display: block;
+    width: clamp(240px, 40vw, 480px);
+    height: auto;
+    margin: 0 auto var(--space-3);
+  }
+
   &__hero-sub {
     font-family: var(--font-serif);
     font-style: italic;

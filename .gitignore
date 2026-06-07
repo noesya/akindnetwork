@@ -1,6 +1,26 @@
+# Build & dependency artifacts
 node_modules
 dist
+
+# TypeScript incremental build cache
+*.tsbuildinfo
+
+# Vite caches
+.vite
+
+# Environment files — NEVER commit a real .env (only .env.example).
+.env
+.env.*
+!.env.example
+
+# Editor / OS noise
 *.local
 .DS_Store
-.vite
-.claude
+.idea
+.vscode
+
+# Local Claude config (per-user permissions). launch.json IS shareable if you
+# want, in which case remove this line and rely on settings.local.json being
+# ignored explicitly.
+.claude/settings.local.json
+.claude/local/

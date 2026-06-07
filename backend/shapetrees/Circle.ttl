@@ -1,0 +1,8 @@
+@prefix st: <http://www.w3.org/ns/shapetrees#> .
+@prefix kind: <https://kind.app/ns#> .
+
+<#Circle>
+    a st:ShapeTree ;
+    st:expectsType st:Container ;
+    st:shape <#CircleShape> ;
+    st:contains <#Circle> .

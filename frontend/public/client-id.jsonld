@@ -1,0 +1,21 @@
+{
+  "@context": ["https://www.w3.org/ns/solid/oidc-context.jsonld"],
+
+  "client_id": "https://akindnetwork.org/client-id.jsonld",
+  "client_name": "A kind network",
+  "client_uri": "https://akindnetwork.org",
+  "logo_uri": "https://akindnetwork.org/images/logo192.png",
+  "policy_uri": "https://akindnetwork.org/policy",
+  "tos_uri": "https://akindnetwork.org/terms",
+
+  "redirect_uris": ["https://akindnetwork.org/auth-callback"],
+  "post_logout_redirect_uris": ["https://akindnetwork.org/"],
+
+  "scope": "openid webid offline_access",
+  "grant_types": ["authorization_code", "refresh_token"],
+  "response_types": ["code"],
+  "token_endpoint_auth_method": "none",
+
+  "default_max_age": 86400,
+  "require_auth_time": true
+}

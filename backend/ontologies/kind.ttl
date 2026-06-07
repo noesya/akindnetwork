@@ -1,0 +1,114 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dc: <http://purl.org/dc/terms/> .
+@prefix as: <https://www.w3.org/ns/activitystreams#> .
+@prefix schema: <http://schema.org/> .
+@prefix kind: <https://kind.app/ns#> .
+
+#
+# Kind ontology — minimal vocabulary specific to the app.
+# Everything generic (author, content, sources URLs, dates) reuses AS2 / DC /
+# schema.org / FOAF. We only mint terms when no standard exists.
+#
+
+kind:
+    a owl:Ontology ;
+    rdfs:label "Kind ontology"@en ;
+    rdfs:comment "Custom terms for the Kind social network."@en ;
+    owl:versionInfo "0.1.0" .
+
+# ---- Classes ---------------------------------------------------------------
+
+kind:Letter
+    a owl:Class ;
+    rdfs:subClassOf as:Article ;
+    rdfs:label "Letter"@en, "Lettre"@fr ;
+    rdfs:comment "A long-form, peer-reviewed text published on Kind."@en .
+
+kind:Source
+    a owl:Class ;
+    rdfs:label "Source"@en, "Source"@fr ;
+    rdfs:comment "A first-class reference cited by a letter or comment."@en .
+
+kind:Circle
+    a owl:Class ;
+    rdfs:label "Circle"@en, "Cercle"@fr ;
+    rdfs:comment "An interest circle that scopes the audience of letters. Mapped one-to-one onto a WAC group."@en .
+
+kind:Approval
+    a owl:Class ;
+    rdfs:label "Approval"@en, "Approbation"@fr ;
+    rdfs:comment "A reviewer's act of approving a letter. Stored as a node so we can attach a timestamp and rationale later if needed."@en .
+
+# ---- Status individuals ----------------------------------------------------
+# Stored as named individuals so SPARQL can query `?l kind:status kind:Published`.
+
+kind:Status   a owl:Class ; rdfs:label "Letter status"@en .
+
+kind:Draft       a kind:Status ; rdfs:label "Draft"@en .
+kind:InReview    a kind:Status ; rdfs:label "In review"@en .
+kind:Published   a kind:Status ; rdfs:label "Published"@en .
+
+# ---- Properties — letter lifecycle -----------------------------------------
+
+kind:status
+    a owl:ObjectProperty ;
+    rdfs:domain kind:Letter ;
+    rdfs:range kind:Status ;
+    rdfs:label "status"@en .
+
+kind:approvedBy
+    a owl:ObjectProperty ;
+    rdfs:domain kind:Letter ;
+    rdfs:label "approved by"@en ;
+    rdfs:comment "WebID of a peer who has approved this letter. Multi-valued: count >= threshold triggers publication."@en .
+
+kind:rejectedContentHash
+    a owl:DatatypeProperty ;
+    rdfs:domain kind:Letter ;
+    rdfs:range xsd:string ;
+    rdfs:label "rejected content hash"@en ;
+    rdfs:comment "SHA-256 of the letter's content at the moment a peer rejected it. Resubmission is blocked while the current content hashes to the same value — the author must actually modify their text."@en .
+
+kind:rejectionReason
+    a owl:DatatypeProperty ;
+    rdfs:domain kind:Letter ;
+    rdfs:range xsd:string ;
+    rdfs:label "rejection reason"@en .
+
+# ---- Properties — letter content & relations -------------------------------
+
+kind:respondsTo
+    a owl:ObjectProperty ;
+    rdfs:domain kind:Letter ;
+    rdfs:range kind:Letter ;
+    rdfs:label "responds to"@en .
+
+kind:sources
+    a owl:ObjectProperty ;
+    rdfs:domain kind:Letter ;
+    rdfs:range kind:Source ;
+    rdfs:label "sources"@en .
+
+kind:circle
+    a owl:ObjectProperty ;
+    rdfs:domain kind:Letter ;
+    rdfs:range kind:Circle ;
+    rdfs:label "circle"@en ;
+    rdfs:comment "The interest circle this letter is addressed to."@en .
+
+kind:theme
+    a owl:ObjectProperty ;
+    rdfs:domain kind:Letter ;
+    rdfs:label "theme"@en ;
+    rdfs:comment "URI of a SKOS concept describing the letter's theme."@en .
+
+# ---- Properties — circles --------------------------------------------------
+
+kind:circleOwner
+    a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:domain kind:Circle ;
+    rdfs:label "circle owner"@en ;
+    rdfs:comment "WebID of the unique owner of the circle. Self-managed: transferable via kind-circles.transferOwnership."@en .

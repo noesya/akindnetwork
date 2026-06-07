@@ -21,6 +21,20 @@
   &__webid {
     font-size: 13px;
     color: var(--color-text-muted);
+    word-break: break-all;
+  }
+
+  &__mock-badge {
+    display: inline-block;
+    margin-top: var(--space-2);
+    padding: 2px var(--space-3);
+    font-size: 11px;
+    font-family: var(--font-sans);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    border-radius: 999px;
+    background: var(--color-surface);
+    color: var(--color-text-muted);
   }
 
   &__section {

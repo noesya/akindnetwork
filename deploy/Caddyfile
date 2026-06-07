@@ -1,0 +1,68 @@
+# Kind — Caddy configuration.
+#
+# Caddy handles TLS termination automatically via Let's Encrypt as long as the
+# domain names resolve to this server. The frontend is served as static files;
+# the backend is reached via a subdomain.
+
+# ---------------------------------------------------------------------------
+# Frontend — static SPA with history fallback.
+# ---------------------------------------------------------------------------
+akindnetwork.org {
+    root * /srv/dist
+    encode zstd gzip
+
+    # SPA fallback: any path that doesn't map to a real file returns index.html.
+    try_files {path} /index.html
+    file_server
+
+    # Long-lived caching for hashed assets, no-cache for the HTML entry point.
+    @assets path /assets/*
+    header @assets Cache-Control "public, max-age=31536000, immutable"
+    @html path / /index.html
+    header @html Cache-Control "no-cache, no-store, must-revalidate"
+
+    # Basic security headers.
+    header {
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "interest-cohort=()"
+    }
+}
+
+# Redirect www → bare (akindnetwork.org is canonical).
+www.akindnetwork.org {
+    redir https://akindnetwork.org{uri} permanent
+}
+
+# ---------------------------------------------------------------------------
+# Backend API — proxied to the Moleculer service.
+#
+# CORS is required: the SPA at akindnetwork.org is a different origin from
+# api.akindnetwork.org, so the browser would block requests without the right
+# Access-Control-Allow-* response headers. We allow only our own frontend
+# origin (no wildcard) and only the verbs we actually use.
+# ---------------------------------------------------------------------------
+api.akindnetwork.org {
+    encode zstd gzip
+    reverse_proxy moleculer:3000
+
+    @cors_preflight method OPTIONS
+    handle @cors_preflight {
+        header {
+            Access-Control-Allow-Origin "https://akindnetwork.org"
+            Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+            Access-Control-Allow-Headers "Authorization, Content-Type, Accept"
+            Access-Control-Allow-Credentials "true"
+            Access-Control-Max-Age "86400"
+        }
+        respond "" 204
+    }
+
+    header {
+        Access-Control-Allow-Origin "https://akindnetwork.org"
+        Access-Control-Allow-Credentials "true"
+        Vary "Origin"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+}

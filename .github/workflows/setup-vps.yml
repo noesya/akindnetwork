@@ -1,0 +1,52 @@
+# One-shot VPS bootstrap, run from GitHub Actions instead of an SSH terminal.
+#
+# Triggered manually (workflow_dispatch). Idempotent — safe to re-run anytime
+# you change `deploy/bootstrap.sh` and want to re-apply.
+#
+# Required GitHub configuration (same as deploy.yml):
+#   Secrets:
+#     SSH_PRIVATE_KEY — private key with access to VPS_USER@VPS_HOST
+#   Variables:
+#     VPS_HOST  — IP or hostname of the VPS
+#     VPS_USER  — `debian` for a fresh Infomaniak VPS Lite
+
+name: setup-vps
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: setup-vps
+  cancel-in-progress: false
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          VPS_HOST: ${{ vars.VPS_HOST }}
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
+          cat >> ~/.ssh/config <<EOF
+          Host vps
+            HostName $VPS_HOST
+            User ${{ vars.VPS_USER }}
+            IdentityFile ~/.ssh/id_deploy
+            IdentitiesOnly yes
+          EOF
+
+      - name: Copy bootstrap script
+        run: scp deploy/bootstrap.sh vps:/tmp/bootstrap.sh
+
+      - name: Run bootstrap
+        run: ssh vps 'sudo bash /tmp/bootstrap.sh && rm /tmp/bootstrap.sh'
+
+      - name: Verify Docker
+        run: ssh vps 'docker --version && docker compose version'

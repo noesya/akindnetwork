@@ -1,14 +1,23 @@
-import { Link, useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
-import { letters, comments } from '../data/mock';
+import { Link } from 'react-router-dom';
 import LetterView from '../components/LetterView';
 import Thread from '../components/Thread';
+import { useLetters, useComments } from '../hooks/useLetters';
 
 export default function ReadPage() {
-  const { t } = useTranslation();
-  const navigate = useNavigate();
+  const { letters, isLoading } = useLetters();
   const letter = letters[0];
-  const letterComments = comments.filter((c) => c.letterId === letter.id);
+  const { comments: letterComments } = useComments(letter?.id);
+
+  if (isLoading) {
+    return <p className="muted" style={{ textAlign: 'center', marginTop: 'var(--space-7)' }}>…</p>;
+  }
+  if (!letter) {
+    return (
+      <div style={{ textAlign: 'center', marginTop: 'var(--space-7)' }}>
+        <p className="muted">No letter yet.</p>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -32,21 +41,23 @@ function ReadNav({
 }) {
   return (
     <nav className="read-nav">
-      {prevId ? (
-        <Link to={`/read/${prevId}`} className="read-nav__arrow">
-          ← précédente
-        </Link>
-      ) : (
-        <span />
-      )}
-      <span className="read-nav__counter">{current} / {total}</span>
-      {nextId ? (
-        <Link to={`/read/${nextId}`} className="read-nav__arrow">
-          suivante →
-        </Link>
-      ) : (
-        <span />
-      )}
+      <span className="read-nav__previous">
+        {prevId && (
+          <Link to={`/read/${prevId}`} className="read-nav__arrow">
+            ← précédente
+          </Link>
+        )}
+      </span>
+      <span className="read-nav__counter">
+        {current} / {total}
+      </span>
+      <span className="read-nav__next">
+        {nextId && (
+          <Link to={`/read/${nextId}`} className="read-nav__arrow">
+            suivante →
+          </Link>
+        )}
+      </span>
     </nav>
   );
 }

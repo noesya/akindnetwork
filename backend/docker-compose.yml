@@ -1,0 +1,30 @@
+# Local dev stack for the Kind backend.
+# Run: npm run stack:up    (start Fuseki + Redis in the background)
+# Stop: npm run stack:down
+
+services:
+  fuseki:
+    image: stain/jena-fuseki:5.0.0
+    container_name: kind-fuseki
+    # Bound to loopback only. This is a dev stack — no reason to expose Fuseki
+    # to the LAN/wifi we're sitting on.
+    ports:
+      - "127.0.0.1:3030:3030"
+    environment:
+      ADMIN_PASSWORD: admin
+      JVM_ARGS: -Xmx2g
+    volumes:
+      - fuseki-data:/fuseki
+
+  redis:
+    image: redis:7-alpine
+    container_name: kind-redis
+    ports:
+      - "127.0.0.1:6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+
+volumes:
+  fuseki-data:
+  redis-data:

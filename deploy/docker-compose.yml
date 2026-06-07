@@ -1,0 +1,86 @@
+# Kind — production stack.
+#
+# This file lives at /opt/kind/docker-compose.yml on the VPS. It is rsynced
+# from deploy/docker-compose.yml by the GitHub Actions deploy workflow.
+#
+# Services:
+#   caddy    — reverse proxy + TLS (Let's Encrypt). Serves /var/www/kind/dist
+#              for the frontend and proxies /api/* to moleculer.
+#   moleculer — the Kind backend (built from ../backend/). PeerReview,
+#               Circles, Sources, the rate-limit + time-window middlewares.
+#   oxigraph — the SPARQL endpoint. Way lighter than Fuseki (Rust, ~50 MB RAM).
+#   redis    — Moleculer queues + rate-limit counters.
+#
+# All long-lived data lives in named volumes so the host filesystem stays clean.
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"   # HTTP/3
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - /var/www/kind/dist:/srv/dist:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - moleculer
+
+  moleculer:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      # Internal hostnames take precedence over .env values.
+      SPARQL_ENDPOINT: http://oxigraph:7878
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      oxigraph:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    # Moleculer doesn't expose a /ready endpoint by default. We probe the
+    # listening port via a 1-line node script — works without curl/wget being
+    # present in the image.
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('net').createConnection(3000,'127.0.0.1').on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  oxigraph:
+    image: ghcr.io/oxigraph/oxigraph:0.4
+    restart: unless-stopped
+    command: serve --location /data --bind 0.0.0.0:7878
+    volumes:
+      - oxigraph-data:/data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7878/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  caddy-data:
+  caddy-config:
+  oxigraph-data:
+  redis-data:

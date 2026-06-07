@@ -1,0 +1,112 @@
+# Deploy Kind to the Infomaniak VPS on push to main.
+#
+# Flow:
+#   1. Build the frontend (in frontend/) with production VITE_* env vars.
+#   2. Rsync frontend/dist/ → /var/www/kind/dist  (Caddy serves it directly).
+#   3. Rsync deploy/* + backend/ → /opt/kind  (compose stack source).
+#   4. SSH to the VPS and `docker compose up -d --build --remove-orphans`.
+#
+# Required GitHub Actions configuration:
+#   Secrets:
+#     SSH_PRIVATE_KEY   — private key with access to the deploy user on the VPS
+#   Variables:
+#     VPS_HOST          — IP or hostname of the VPS
+#     VPS_USER          — usually `debian`
+#     VITE_FRONTEND_URL — https://akindnetwork.org
+#     VITE_DEFAULT_POD_PROVIDER — https://armoise.co
+
+name: deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  build-frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci
+
+      - name: Build
+        run: npm run build
+        env:
+          VITE_FRONTEND_URL: ${{ vars.VITE_FRONTEND_URL }}
+          VITE_DEFAULT_POD_PROVIDER: ${{ vars.VITE_DEFAULT_POD_PROVIDER }}
+
+      - name: Upload dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: frontend/dist/
+          retention-days: 7
+
+  deploy:
+    needs: build-frontend
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://akindnetwork.org
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download dist
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          VPS_HOST: ${{ vars.VPS_HOST }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
+          cat >> ~/.ssh/config <<EOF
+          Host vps
+            HostName $VPS_HOST
+            User ${{ vars.VPS_USER }}
+            IdentityFile ~/.ssh/id_deploy
+            IdentitiesOnly yes
+          EOF
+
+      - name: Rsync frontend dist
+        run: |
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/id_deploy -o StrictHostKeyChecking=accept-new" \
+            dist/ vps:/var/www/kind/dist/
+
+      - name: Rsync backend + compose files
+        run: |
+          rsync -avz --delete \
+            --exclude node_modules --exclude '.env*' --exclude '*.log' \
+            -e "ssh -i ~/.ssh/id_deploy" \
+            backend/ vps:/opt/kind/backend/
+          rsync -avz \
+            --exclude '.env*' \
+            -e "ssh -i ~/.ssh/id_deploy" \
+            deploy/docker-compose.yml deploy/Caddyfile \
+            vps:/opt/kind/
+
+      - name: Compose up
+        run: |
+          ssh vps 'cd /opt/kind && docker compose up -d --build --remove-orphans && docker compose ps'

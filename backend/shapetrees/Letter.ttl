@@ -1,0 +1,13 @@
+@prefix st: <http://www.w3.org/ns/shapetrees#> .
+@prefix shex: <http://www.w3.org/ns/shex#> .
+@prefix kind: <https://kind.app/ns#> .
+
+# Minimal shape tree for a Letter resource.
+# The matching SHACL/ShEx shape file lives next to this and will be loaded
+# automatically by SemApps' shape-tree service.
+
+<#Letter>
+    a st:ShapeTree ;
+    st:expectsType st:Resource ;
+    st:shape <#LetterShape> ;
+    st:contains <#Letter> .
