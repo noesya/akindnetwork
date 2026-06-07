@@ -16,9 +16,10 @@ module.exports = {
     }
   },
 
-  transporter: process.env.REDIS_URL
-    ? { type: 'Redis', options: { url: process.env.REDIS_URL } }
-    : null,
+  // Moleculer auto-detects the transporter from a URL string. Passing it as
+  // `{ options: { url: ... } }` would NOT work because ioredis doesn't accept
+  // a `url` key in its options object — it'd silently fall back to localhost.
+  transporter: process.env.REDIS_URL || null,
 
   // Cache & metrics: kept simple for dev. Re-enable Prometheus when going to prod.
   cacher: 'Memory',
