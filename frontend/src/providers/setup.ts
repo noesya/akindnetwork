@@ -61,6 +61,14 @@ const resources = {
 // route requests by server. We start with armoise; user-provided WebIDs from
 // other providers will be added dynamically by the auth provider.
 // ---------------------------------------------------------------------------
+// SemApps expects `containers` as an *array* of `{ uri, types }` objects, NOT
+// the nested-by-server-key shape from older versions. The find/forEach calls
+// in semantic-data-provider's helpers iterate this array.
+const containers = Object.values(resources).map((r) => ({
+  uri: r.containerUri,
+  types: r.types
+}));
+
 const dataServers: Record<string, any> = {
   armoise: {
     name: 'Armoise',
@@ -68,11 +76,7 @@ const dataServers: Record<string, any> = {
     sparqlEndpoint: `${DEFAULT_POD_PROVIDER}/sparql`,
     default: true,
     pod: true,
-    containers: {
-      armoise: Object.fromEntries(
-        Object.entries(resources).map(([k, v]) => [k, [v.containerUri]])
-      )
-    }
+    containers
   }
 };
 
