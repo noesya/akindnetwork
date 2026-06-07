@@ -19,8 +19,4 @@ dist
 .idea
 .vscode
 
-# Local Claude config (per-user permissions). launch.json IS shareable if you
-# want, in which case remove this line and rely on settings.local.json being
-# ignored explicitly.
-.claude/settings.local.json
-.claude/local/
+.claude
