@@ -62,7 +62,7 @@ En mode **déconnecté**, seuls `À propos` et `Moi` sont visibles dans les coin
 
 ## Déploiement
 
-Cible : VPS Infomaniak Debian 13, stack Docker complète (Caddy + Moleculer + Oxigraph + Redis). Tout est piloté par GitHub Actions :
+Cible : VPS Infomaniak Debian 13, stack Docker complète (Caddy + Moleculer + Fuseki + Redis). Tout est piloté par GitHub Actions :
 
 | Workflow | Déclencheur | Effet |
 |---|---|---|

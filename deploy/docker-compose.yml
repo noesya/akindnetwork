@@ -4,14 +4,17 @@
 # from deploy/docker-compose.yml by the GitHub Actions deploy workflow.
 #
 # Services:
-#   caddy    — reverse proxy + TLS (Let's Encrypt). Serves /var/www/kind/dist
-#              for the frontend and proxies /api/* to moleculer.
+#   caddy     — reverse proxy + TLS (Let's Encrypt). Serves /var/www/kind/dist
+#               for the frontend and proxies api.akindnetwork.org to moleculer.
 #   moleculer — the Kind backend (built from ../backend/). PeerReview,
 #               Circles, Sources, the rate-limit + time-window middlewares.
-#   oxigraph — the SPARQL endpoint. Way lighter than Fuseki (Rust, ~50 MB RAM).
-#   redis    — Moleculer queues + rate-limit counters.
+#   fuseki    — Apache Jena Fuseki, the SPARQL endpoint. Same engine as the
+#               dev stack (backend/docker-compose.yml) for dev/prod parity.
+#   redis     — Moleculer queues + rate-limit counters.
 #
 # All long-lived data lives in named volumes so the host filesystem stays clean.
+# No service except caddy exposes a host port — fuseki, moleculer, redis are
+# only reachable on the internal Docker network.
 
 services:
   caddy:
@@ -37,16 +40,13 @@ services:
       - .env
     environment:
       # Internal hostnames take precedence over .env values.
-      SPARQL_ENDPOINT: http://oxigraph:7878
+      SPARQL_ENDPOINT: http://fuseki:3030
       REDIS_URL: redis://redis:6379
     depends_on:
-      oxigraph:
+      fuseki:
         condition: service_healthy
       redis:
         condition: service_healthy
-    # Moleculer doesn't expose a /ready endpoint by default. We probe the
-    # listening port via a 1-line node script — works without curl/wget being
-    # present in the image.
     healthcheck:
       test: ["CMD", "node", "-e", "require('net').createConnection(3000,'127.0.0.1').on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))"]
       interval: 30s
@@ -54,18 +54,23 @@ services:
       retries: 5
       start_period: 30s
 
-  oxigraph:
-    image: ghcr.io/oxigraph/oxigraph:0.4
+  fuseki:
+    image: stain/jena-fuseki:5.0.0
     restart: unless-stopped
-    command: serve --location /data --bind 0.0.0.0:7878
+    environment:
+      # Read from /opt/kind/.env. NEVER commit a real password.
+      ADMIN_PASSWORD: ${FUSEKI_ADMIN_PASSWORD}
+      JVM_ARGS: -Xmx1g
     volumes:
-      - oxigraph-data:/data
+      - fuseki-data:/fuseki
+    # /$/ping is Fuseki's built-in liveness endpoint. The $$ escapes compose's
+    # own variable interpolation so the literal $ reaches the shell.
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:7878/"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:3030/$$/ping"]
       interval: 30s
       timeout: 5s
-      retries: 3
-      start_period: 10s
+      retries: 5
+      start_period: 30s
 
   redis:
     image: redis:7-alpine
@@ -82,5 +87,5 @@ services:
 volumes:
   caddy-data:
   caddy-config:
-  oxigraph-data:
+  fuseki-data:
   redis-data:
