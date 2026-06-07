@@ -1,12 +1,17 @@
-# Build & typecheck on every pull request and on push to main.
-# Cheap, fast, fails the merge if the frontend build is broken.
+# Build & typecheck on every pull request.
+#
+# Push to main is NOT triggered here on purpose — `deploy.yml` already does
+# the build with the real production env vars before shipping, so running ci
+# on main would just duplicate the work.
+#
+# ci is the safety net for the day external contributors send PRs: their
+# secrets aren't available, so we run with placeholder VITE_* and only check
+# that the build compiles + the types are sound.
 
 name: ci
 
 on:
   pull_request:
-  push:
-    branches: [main]
 
 concurrency:
   group: ci-${{ github.ref }}
