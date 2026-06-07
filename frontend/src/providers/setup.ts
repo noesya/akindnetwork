@@ -61,11 +61,11 @@ const resources = {
 // route requests by server. We start with armoise; user-provided WebIDs from
 // other providers will be added dynamically by the auth provider.
 // ---------------------------------------------------------------------------
-// SemApps expects `containers` as an *array* of `{ uri, types }` objects, NOT
-// the nested-by-server-key shape from older versions. The find/forEach calls
-// in semantic-data-provider's helpers iterate this array.
+// SemApps expects `containers` as an array of `{ path, types }`. At boot,
+// `normalizeConfig` computes `uri = urljoin(server.baseUrl, container.path)`.
+// We pass relative paths; absolute URIs are derived internally.
 const containers = Object.values(resources).map((r) => ({
-  uri: r.containerUri,
+  path: r.containerUri,
   types: r.types
 }));
 
