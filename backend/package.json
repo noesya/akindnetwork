@@ -12,13 +12,20 @@
     "stack:logs": "docker compose logs -f"
   },
   "dependencies": {
-    "@activitypods/app": "^2.2.0",
-    "@semapps/triplestore": "^1.2.0",
+    "@activitypods/app": "^2.1.0",
+    "@semapps/auth": "^1.1.2",
+    "@semapps/core": "^1.1.2",
+    "@semapps/crypto": "^1.1.2",
+    "@semapps/nodeinfo": "^1.1.2",
+    "@semapps/ontologies": "^1.1.2",
+    "@semapps/solid": "^1.1.2",
+    "@semapps/triplestore": "^1.1.2",
     "dotenv": "^16.4.5",
     "ioredis": "^5.4.1",
     "moleculer": "^0.14.34",
     "moleculer-bull": "^0.2.5",
-    "moleculer-web": "^0.10.7"
+    "moleculer-web": "^0.10.7",
+    "url-join": "^4.0.1"
   },
   "devDependencies": {
     "moleculer-repl": "^0.7.4"
