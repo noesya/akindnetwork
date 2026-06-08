@@ -41,26 +41,39 @@ module.exports = {
     reviewerCount: parseInt(process.env.KIND_REVIEWER_COUNT || '3', 10)
   },
 
-  dependencies: ['api', 'ldp.resource', 'app-registrations'],
+  // We only hard-depend on `api` so that addRoute exists. `ldp.resource` and
+  // `app-registrations` are used inside handlers — if they're slow to come
+  // up, requests will retry rather than the whole service refusing to start.
+  dependencies: ['api'],
 
   async started() {
-    // Expose our actions on the HTTP gateway. The catch-all LDP route is
-    // installed by @semapps/ldp's api service and is registered LAST (because
-    // CoreService's `optimizeRouteOrder` puts catchAll routes at the end), so
-    // our specific aliases here take precedence over /:slug.*
-    await this.broker.call('api.addRoute', {
-      route: {
-        path: '/kind',
-        authentication: true,
-        bodyParsers: { json: true },
-        mappingPolicy: 'restrict',
-        aliases: {
-          'POST /peer-review/submit-draft': 'kind-peer-review.submitDraft'
-          // 'POST /peer-review/approve'      → étape 3
-          // 'POST /peer-review/reject'       → étape 3
-        }
+    // Expose our actions on the HTTP gateway.
+    //
+    // `toBottom: false` is critical: @semapps/ldp registers a catch-all route
+    // at `/:slugParts*` which would happily swallow `/kind/peer-review/...`
+    // first. CoreService overrides `optimizeRouteOrder` to push catchAll
+    // routes to the end, but its single-arg `.sort(a => ...)` doesn't always
+    // produce a stable reorder across V8 versions. Inserting our route at
+    // the top of the list sidesteps the ordering question entirely.
+    await this.broker.call(
+      'api.addRoute',
+      {
+        route: {
+          path: '/kind',
+          authentication: true,
+          bodyParsers: { json: true },
+          mappingPolicy: 'restrict',
+          aliases: {
+            'POST /peer-review/submit-draft': 'kind-peer-review.submitDraft'
+            // 'POST /peer-review/approve'      → étape 3
+            // 'POST /peer-review/reject'       → étape 3
+          }
+        },
+        toBottom: false
       }
-    });
+    );
+
+    this.logger.info('kind-peer-review HTTP route registered at /kind/peer-review/*');
   },
 
   actions: {

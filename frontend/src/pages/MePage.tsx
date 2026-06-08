@@ -16,15 +16,18 @@ type PodLetter = {
   'dc:modified'?: string;
 };
 
+/**
+ * /me — profile page. Identity + account + language + my published letters.
+ *
+ * Drafts and in-review letters used to live here too; they moved to /write
+ * (the writing workspace) so the page reflects only what's PUBLIC about the
+ * user. Everything still-being-worked-on belongs to writing.
+ */
 export default function MePage() {
   const { t, i18n } = useTranslation();
   const logout = useLogout();
   const { user, isAuthenticated } = useCurrentUser();
 
-  // Pull every Letter the user can read (server-side WebACL already filters
-  // to their own + shared-in). We bucket by `kind:status` client-side rather
-  // than relying on filter support, which is uneven across SemApps
-  // dataProviders for non-standard predicates.
   const { data: rawLetters } = useGetList<PodLetter>(
     'Letter',
     {
@@ -34,8 +37,6 @@ export default function MePage() {
     { enabled: isAuthenticated }
   );
   const podLetters: PodLetter[] = rawLetters || [];
-  const myDrafts = podLetters.filter((l) => l['kind:status'] === 'draft');
-  const myInReview = podLetters.filter((l) => l['kind:status'] === 'pending-review');
   const myPodPublished = podLetters.filter((l) => l['kind:status'] === 'published');
   // Fall back to mock published letters when no Pod is connected (demo mode).
   const myPublished = isAuthenticated
@@ -70,48 +71,6 @@ export default function MePage() {
           <Link to="/login" className="btn">
             {isAuthConfigured ? t('me.connectPod') : t('me.connectPodDisabled')}
           </Link>
-        )}
-      </section>
-
-      <section className="me__section">
-        <h2 className="me__section-title">{t('me.drafts')}</h2>
-        {myDrafts.length === 0 ? (
-          <p className="muted">{t('me.emptyDrafts')}</p>
-        ) : (
-          myDrafts.map((l) => (
-            <Link
-              key={l.id}
-              to={`/write/${toSlug(l.id)}`}
-              className="me__item"
-            >
-              <span>{l.name || t('me.untitledDraft')}</span>
-              <span className="me__item-meta">
-                <span className="me__badge me__badge--draft">{t('me.status.draft')}</span>
-                {formatDate(l['dc:modified'] || l['dc:created'], i18n.language)}
-              </span>
-            </Link>
-          ))
-        )}
-      </section>
-
-      <section className="me__section">
-        <h2 className="me__section-title">{t('me.inReview')}</h2>
-        {myInReview.length === 0 ? (
-          <p className="muted">{t('me.emptyReview')}</p>
-        ) : (
-          myInReview.map((l) => (
-            <Link
-              key={l.id}
-              to={`/write/${toSlug(l.id)}`}
-              className="me__item"
-            >
-              <span>{l.name || t('me.untitledDraft')}</span>
-              <span className="me__item-meta">
-                <span className="me__badge me__badge--review">{t('me.status.inReview')}</span>
-                {formatDate(l['dc:modified'] || l['dc:created'], i18n.language)}
-              </span>
-            </Link>
-          ))
         )}
       </section>
 

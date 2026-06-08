@@ -20,6 +20,11 @@
     "contribute": "Contribute",
     "noLetterYet": "No letter yet."
   },
+  "write": {
+    "workspaceTitle": "Write",
+    "workspaceHint": "Your drafts and letters in review.",
+    "newLetter": "+ New letter"
+  },
   "editor": {
     "title": "Title",
     "text": "Text",

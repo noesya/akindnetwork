@@ -20,6 +20,11 @@
     "contribute": "Contribuer",
     "noLetterYet": "Il n'y a pas encore de lettre."
   },
+  "write": {
+    "workspaceTitle": "Écrire",
+    "workspaceHint": "Vos brouillons et lettres en relecture.",
+    "newLetter": "+ Nouvelle lettre"
+  },
   "editor": {
     "title": "Titre",
     "text": "Texte",
