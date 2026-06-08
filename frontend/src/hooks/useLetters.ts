@@ -26,13 +26,23 @@ type PodLetter = {
   id: string;
   name?: string;
   content?: string;
-  'kind:status'?: 'draft' | 'pending-review' | 'published';
+  'kind:status'?: 'draft' | 'pending-review' | 'published' | 'rejected';
   'kind:language'?: string;
+  'kind:assignedReviewers'?: string | string[];
+  'kind:approvedBy'?: string | string[];
+  'kind:rejectedBy'?:
+    | { reviewer: string; comment: string }
+    | { reviewer: string; comment: string }[];
   'dc:created'?: string;
   'dc:modified'?: string;
   attributedTo?: string;
   inReplyTo?: string;
 };
+
+// JSON-LD predicates can deserialize to a single object OR an array depending
+// on cardinality. Normalize so consumer code can always .filter/.map.
+const arrayOf = <T,>(v: T | T[] | undefined): T[] =>
+  v == null ? [] : Array.isArray(v) ? v : [v];
 
 const PARAGRAPH_SEPARATOR = /\n{2,}/;
 
@@ -42,7 +52,16 @@ function podStatusToMock(s: PodLetter['kind:status']): Letter['status'] {
   return 'draft';
 }
 
-function podLetterToLetter(p: PodLetter, currentUser: CurrentUser): Letter {
+// Pod-only fields that LetterView doesn't know about yet but the review UI
+// needs. We stash them on the Letter via an extension type rather than
+// widening the mock-side Letter shape (keeps the demo simple).
+export type LetterWithReview = Letter & {
+  assignedReviewers?: string[];
+  approvedByWebIds?: string[];
+  rejectedByEntries?: { reviewer: string; comment: string }[];
+};
+
+function podLetterToLetter(p: PodLetter, currentUser: CurrentUser): LetterWithReview {
   const created = p['dc:created'] || new Date().toISOString();
   const body = (p.content || '').trim();
   return {
@@ -55,7 +74,10 @@ function podLetterToLetter(p: PodLetter, currentUser: CurrentUser): Letter {
     publishedAt: p['dc:modified'] || created,
     status: podStatusToMock(p['kind:status']),
     approvedBy: [],
-    sources: []
+    sources: [],
+    assignedReviewers: arrayOf(p['kind:assignedReviewers']),
+    approvedByWebIds: arrayOf(p['kind:approvedBy']),
+    rejectedByEntries: arrayOf(p['kind:rejectedBy'])
   };
 }
 
@@ -74,22 +96,35 @@ export function useLetters(): { letters: Letter[]; isLoading: boolean } {
     { enabled: shouldFetch }
   );
 
-  // `/read` should only surface letters that have cleared peer review. Drafts
-  // and letters in review are visible to the author via `/me`, never via the
-  // public read flow (cf. project_kind_constraints — peer review is a
-  // priori). Once the per-reviewer "I'm assigned, show this for me to vote"
-  // path lands (étape 2), this filter will broaden to also include letters
-  // where the current user is in `kind:assignedReviewers`.
-  const published = (collection: Letter[]) =>
-    collection.filter((l) => l.status === 'published');
+  // `/read` shows two kinds of letters:
+  //  - Published ones (the public flow).
+  //  - Pending-review ones I'm personally assigned to and haven't voted on
+  //    yet. They appear in the same stream so I encounter them naturally
+  //    while reading; this matches the user's choice 4B (no separate review
+  //    queue). Filter logic mirrors what the LetterView uses to decide
+  //    whether to show approve/reject buttons.
+  const visibleToMe = (l: LetterWithReview) => {
+    if (l.status === 'published') return true;
+    if (l.status !== 'in-review') return false;
+    if (!user.webId) return false;
+    const assigned = l.assignedReviewers ?? [];
+    const approved = l.approvedByWebIds ?? [];
+    const rejected = (l.rejectedByEntries ?? []).map((r) => r.reviewer);
+    return assigned.includes(user.webId) && !approved.includes(user.webId) && !rejected.includes(user.webId);
+  };
 
-  if (!shouldFetch) return { letters: published(mockLetters), isLoading: false };
+  if (!shouldFetch) {
+    return {
+      letters: mockLetters.filter((l) => l.status === 'published'),
+      isLoading: false
+    };
+  }
   const adapted = (data ?? []).map((p) => podLetterToLetter(p, user));
-  return { letters: published(adapted), isLoading };
+  return { letters: adapted.filter(visibleToMe), isLoading };
 }
 
 export function useLetter(slugOrId: string | undefined): {
-  letter: Letter | undefined;
+  letter: LetterWithReview | undefined;
   isLoading: boolean;
 } {
   const { user, isAuthenticated } = useCurrentUser();

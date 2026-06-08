@@ -4,15 +4,38 @@ import { Link } from 'react-router-dom';
 import type { Letter, Source, User } from '../data/mock';
 import { users } from '../data/mock';
 import { useCurrentUser } from '../hooks/useCurrentUser';
+import type { LetterWithReview } from '../hooks/useLetters';
 import { toSlug } from '../lib/letterSlug';
 import Avatar from './Avatar';
 import SidebarField from './SidebarField';
 import SourceModal from './SourceModal';
 
-export default function LetterView({ letter, showActions = true }: { letter: Letter; showActions?: boolean }) {
+export default function LetterView({
+  letter,
+  showActions = true
+}: {
+  letter: Letter | LetterWithReview;
+  showActions?: boolean;
+}) {
   const { t, i18n } = useTranslation();
   const [openSource, setOpenSource] = useState<Source | null>(null);
   const { user: me } = useCurrentUser();
+
+  // Should we show approve/reject buttons? Yes when:
+  //  - the letter is awaiting review (status='in-review')
+  //  - I'm in its assignedReviewers list
+  //  - I haven't already voted (in approvedByWebIds or rejectedByEntries)
+  // Étape 2 makes the buttons APPEAR; clicking them is a no-op visualization.
+  // Étape 3 will wire `onClick` to the backend's approve/reject actions.
+  const reviewable = letter as LetterWithReview;
+  const myWebId = me.webId;
+  const canReview = Boolean(
+    reviewable.status === 'in-review' &&
+      myWebId &&
+      reviewable.assignedReviewers?.includes(myWebId) &&
+      !reviewable.approvedByWebIds?.includes(myWebId) &&
+      !reviewable.rejectedByEntries?.some((r) => r.reviewer === myWebId)
+  );
   // Letters fetched from a Pod carry the WebID-derived authorId (e.g.
   // "arnaudlevy") which won't be in the mock `users` map. Fall back to the
   // current user when authoring matches them, then to a minimal stub so the
@@ -53,13 +76,38 @@ export default function LetterView({ letter, showActions = true }: { letter: Let
             ))}
           </div>
 
-          {showActions && (
+          {showActions && !canReview && (
             <div className="letter-view__actions">
               <Link to="/write" className="btn">
                 {t('letter.respondPublicly')}
               </Link>
               <button className="btn btn--ghost">
                 {t('letter.writeToAuthor', { name: author.name.split(' ')[0] })}
+              </button>
+            </div>
+          )}
+
+          {canReview && (
+            <div className="letter-view__actions letter-view__actions--review">
+              <div className="letter-view__review-prompt">{t('review.prompt')}</div>
+              <button
+                className="btn"
+                type="button"
+                // étape 3 wires this to kind-peer-review.approve
+                onClick={() => undefined}
+                disabled
+                title={t('review.comingSoon')}
+              >
+                {t('review.approve')}
+              </button>
+              <button
+                className="btn btn--ghost"
+                type="button"
+                onClick={() => undefined}
+                disabled
+                title={t('review.comingSoon')}
+              >
+                {t('review.reject')}
               </button>
             </div>
           )}

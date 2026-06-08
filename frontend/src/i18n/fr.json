@@ -26,10 +26,18 @@
     "saveDraft": "Enregistrer en brouillon",
     "sendForReview": "Envoyer en relecture",
     "saving": "Enregistrement…",
+    "submitting": "Envoi…",
     "savedDraft": "Brouillon enregistré.",
     "sentForReview": "Lettre envoyée en relecture.",
     "saveFailed": "Impossible d'enregistrer la lettre.",
+    "submitFailed": "Impossible d'envoyer la lettre en relecture.",
     "wordsLeft": "{{count}} mots restants"
+  },
+  "review": {
+    "prompt": "Cette lettre attend votre relecture.",
+    "approve": "Approuver",
+    "reject": "Rejeter",
+    "comingSoon": "Vote disponible bientôt (étape 3)"
   },
   "limit": {
     "todayLabel": "Aujourd'hui",

@@ -5,12 +5,11 @@ import { useNavigate } from 'react-router-dom';
 import type { Letter } from '../data/mock';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { fromSlug, toSlug } from '../lib/letterSlug';
+import { submitDraftForReview } from '../lib/peerReviewApi';
 import SidebarField from './SidebarField';
 
 const MAX_WORDS = 500;
 const RESOURCE = 'Letter';
-
-type Status = 'draft' | 'pending-review';
 
 type Props = {
   respondsTo?: Letter['respondsTo'];
@@ -81,49 +80,67 @@ export default function LetterEditor({ respondsTo, draftId: draftIdProp }: Props
   const overLimit = wordCount > MAX_WORDS;
   const isEmpty = title.trim() === '' && body.trim() === '';
 
-  const buildPayload = (status: Status) => {
+  // Build the resource payload for a save. The status is always written by
+  // the FRONTEND for drafts; for "submit for review" the frontend saves as
+  // draft first and then the BACKEND flips the status (and assigns reviewers).
+  const buildDraftPayload = () => {
     const data: Record<string, unknown> = {
       type: 'Note',
       name: title.trim(),
       content: body.trim(),
-      'kind:status': status,
+      'kind:status': 'draft',
       'kind:language': i18n.language
     };
     if (respondsTo?.id) data.inReplyTo = respondsTo.id;
     return data;
   };
 
-  const save = (status: Status, after?: () => void) => {
-    const data = buildPayload(status);
-    const onSuccess = (saved: any) => {
-      if (status === 'draft') {
-        notify('editor.savedDraft', { type: 'success' });
-      } else {
-        notify('editor.sentForReview', { type: 'success' });
-      }
-      const id = saved?.id ? String(saved.id) : letterId;
-      if (id && !letterId) {
-        setLetterId(id);
-        // Replace so the browser back-button still goes to wherever the user
-        // came from (rather than the empty /write). We navigate to the short
-        // slug — the full URI is recoverable from the user's pim:storage on
-        // refresh.
-        navigate(`/write/${toSlug(id)}`, { replace: true });
-      }
-      after?.();
-    };
-    const onError = (e: any) => {
-      notify(e?.message || 'editor.saveFailed', { type: 'error' });
-    };
+  const persistDraft = (): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const data = buildDraftPayload();
+      const onSuccess = (saved: any) => {
+        const id = saved?.id ? String(saved.id) : letterId;
+        if (!id) return reject(new Error('No id returned from save'));
+        if (!letterId) {
+          setLetterId(id);
+          navigate(`/write/${toSlug(id)}`, { replace: true });
+        }
+        resolve(id);
+      };
+      const onError = (e: any) => reject(new Error(e?.message || 'editor.saveFailed'));
 
-    if (letterId) {
-      update(
-        RESOURCE,
-        { id: letterId, data, previousData: existing || {} },
-        { onSuccess, onError }
-      );
-    } else {
-      create(RESOURCE, { data }, { onSuccess, onError });
+      if (letterId) {
+        update(
+          RESOURCE,
+          { id: letterId, data, previousData: existing || {} },
+          { onSuccess, onError }
+        );
+      } else {
+        create(RESOURCE, { data }, { onSuccess, onError });
+      }
+    });
+
+  const saveDraft = async () => {
+    try {
+      await persistDraft();
+      notify('editor.savedDraft', { type: 'success' });
+    } catch (e: any) {
+      notify(e?.message || 'editor.saveFailed', { type: 'error' });
+    }
+  };
+
+  const [submitting, setSubmitting] = useState(false);
+  const sendForReview = async () => {
+    setSubmitting(true);
+    try {
+      const id = await persistDraft();
+      await submitDraftForReview(id);
+      notify('editor.sentForReview', { type: 'success' });
+      navigate('/me');
+    } catch (e: any) {
+      notify(e?.message || 'editor.submitFailed', { type: 'error' });
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -161,18 +178,18 @@ export default function LetterEditor({ respondsTo, draftId: draftIdProp }: Props
           <button
             className="btn"
             type="button"
-            disabled={isEmpty || isSaving}
-            onClick={() => save('draft')}
+            disabled={isEmpty || isSaving || submitting}
+            onClick={saveDraft}
           >
             {isSaving ? t('editor.saving') : t('editor.saveDraft')}
           </button>
           <button
             className="btn"
             type="button"
-            disabled={isEmpty || isSaving || overLimit}
-            onClick={() => save('pending-review', () => navigate('/me'))}
+            disabled={isEmpty || isSaving || submitting || overLimit}
+            onClick={sendForReview}
           >
-            {t('editor.sendForReview')}
+            {submitting ? t('editor.submitting') : t('editor.sendForReview')}
           </button>
           <span className="editor__count">{t('editor.wordsLeft', { count: wordsLeft })}</span>
         </div>

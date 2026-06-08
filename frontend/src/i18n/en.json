@@ -26,10 +26,18 @@
     "saveDraft": "Save as draft",
     "sendForReview": "Send for peer review",
     "saving": "Saving…",
+    "submitting": "Submitting…",
     "savedDraft": "Draft saved.",
     "sentForReview": "Letter sent for peer review.",
     "saveFailed": "Could not save the letter.",
+    "submitFailed": "Could not submit the letter for review.",
     "wordsLeft": "{{count}} words left"
+  },
+  "review": {
+    "prompt": "This letter is awaiting your review.",
+    "approve": "Approve",
+    "reject": "Reject",
+    "comingSoon": "Voting wires up next step (étape 3)"
   },
   "limit": {
     "todayLabel": "Today",
