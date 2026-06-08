@@ -56,7 +56,7 @@
   "about": {
     "title": "A kind network",
     "subtitle": "Peer-reviewed, federated, post-growth",
-    "keyElementsTitle": "Key elements",
+    "keyElementsTitle": "Rules",
     "items": {
       "perDay": { "title": "17 per day", "body": "A maximum of 17 actions a day, as the number of syllables in a Haiku." },
       "noScroll": { "title": "No scroll", "body": "Reading happens 1 text at a time, followed by the answers." },
