@@ -4,12 +4,7 @@
 FROM node:22-alpine AS deps
 WORKDIR /app
 
-# Install only production deps. Use a clean copy to leverage Docker layer cache.
-# `patches/` is copied alongside package.json because npm ci triggers our
-# `postinstall` script, which patches a @semapps/activitypub race condition
-# (see patches/semapps-activitypub-actor.js for the rationale).
 COPY package.json package-lock.json* ./
-COPY patches ./patches
 RUN npm ci --omit=dev
 
 FROM node:22-alpine AS runtime
