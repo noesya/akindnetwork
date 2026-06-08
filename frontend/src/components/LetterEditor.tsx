@@ -136,7 +136,11 @@ export default function LetterEditor({ respondsTo, draftId: draftIdProp }: Props
       const id = await persistDraft();
       await submitDraftForReview(id);
       notify('editor.sentForReview', { type: 'success' });
-      navigate('/me');
+      // Back to the writing workspace — the letter we just submitted will
+      // appear in the "En relecture" column right under the (now blank)
+      // editor, so the user sees the state transition without leaving the
+      // page. Going to /me used to make sense when drafts lived there.
+      navigate('/write');
     } catch (e: any) {
       notify(e?.message || 'editor.submitFailed', { type: 'error' });
     } finally {
