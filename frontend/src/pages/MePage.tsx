@@ -86,6 +86,7 @@ export default function MePage() {
             >
               <span>{l.name || t('me.untitledDraft')}</span>
               <span className="me__item-meta">
+                <span className="me__badge me__badge--draft">{t('me.status.draft')}</span>
                 {formatDate(l['dc:modified'] || l['dc:created'], i18n.language)}
               </span>
             </Link>
@@ -106,6 +107,7 @@ export default function MePage() {
             >
               <span>{l.name || t('me.untitledDraft')}</span>
               <span className="me__item-meta">
+                <span className="me__badge me__badge--review">{t('me.status.inReview')}</span>
                 {formatDate(l['dc:modified'] || l['dc:created'], i18n.language)}
               </span>
             </Link>
@@ -133,16 +135,14 @@ export default function MePage() {
                 className="me__item"
               >
                 <span>{title}</span>
-                <span className="me__item-meta">{dateStr}</span>
+                <span className="me__item-meta">
+                  <span className="me__badge me__badge--published">{t('me.status.published')}</span>
+                  {dateStr}
+                </span>
               </Link>
             );
           })
         )}
-      </section>
-
-      <section className="me__section">
-        <h2 className="me__section-title">{t('me.toReview')}</h2>
-        <p className="muted">{t('me.emptyReview')}</p>
       </section>
 
       <section className="me__section">

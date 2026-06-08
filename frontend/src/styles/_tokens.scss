@@ -6,12 +6,19 @@
   --color-bg: #ffffff;
   --color-surface: #f6f6f6;
   --color-surface-soft: #fbf2f0;
+  // A touch warmer/deeper variant of surface-soft for hover states.
+  --color-surface-strong: #efd8d3;
   --color-text: #000000;
   --color-text-muted: #6e6e6e;
   --color-text-faint: #a8a8a8;
   --color-line: #ececec;
   --color-link: #1a1a1a;
   --color-accent: #1a1a1a;
+  // Status colours — used by badges (Brouillon / En relecture / Publiée) and
+  // any other UI signalling pass/wait/fail. Picked for ≥4.5:1 contrast on
+  // both light bg and dark bg variants below.
+  --color-warn: #b88a2a;
+  --color-success: #2e7d4f;
 
   // Typography
   --font-serif: "Adelphe Floreal", "Iowan Old Style", "Cambria", Georgia, serif;
@@ -51,12 +58,17 @@
     --color-bg: #0d0d0d;
     --color-surface: #1a1a1a;
     --color-surface-soft: #241a1a;
+    --color-surface-strong: #2e2020;
     --color-text: #ededed;
     --color-text-muted: #9a9a9a;
     --color-text-faint: #5a5a5a;
     --color-line: #2a2a2a;
     --color-link: #ededed;
     --color-accent: #ededed;
+    // Lighter status tones for dark mode — same hues, raised lightness for
+    // the same ≥4.5:1 contrast against the dark background.
+    --color-warn: #e0b04a;
+    --color-success: #5cbe83;
   }
 }
 

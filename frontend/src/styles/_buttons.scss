@@ -11,7 +11,7 @@
   transition: background 0.15s ease;
 
   &:hover {
-    background: #efd8d3;
+    background: var(--color-surface-strong);
   }
 
   &--ghost {

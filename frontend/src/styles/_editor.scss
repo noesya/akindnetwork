@@ -21,6 +21,19 @@
     font-family: var(--font-serif);
   }
 
+  &__title-input,
+  &__body-input {
+    // Native form controls don't inherit the `color` of their ancestors —
+    // without this, dark mode would render the input text in the UA's
+    // default (often near-black) on top of our dark background.
+    color: var(--color-text);
+    caret-color: var(--color-text);
+
+    &::placeholder {
+      color: var(--color-text-faint);
+    }
+  }
+
   &__title-input {
     width: 100%;
     font-family: var(--font-serif);

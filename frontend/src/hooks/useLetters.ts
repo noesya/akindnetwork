@@ -74,9 +74,18 @@ export function useLetters(): { letters: Letter[]; isLoading: boolean } {
     { enabled: shouldFetch }
   );
 
-  if (!shouldFetch) return { letters: mockLetters, isLoading: false };
+  // `/read` should only surface letters that have cleared peer review. Drafts
+  // and letters in review are visible to the author via `/me`, never via the
+  // public read flow (cf. project_kind_constraints — peer review is a
+  // priori). Once the per-reviewer "I'm assigned, show this for me to vote"
+  // path lands (étape 2), this filter will broaden to also include letters
+  // where the current user is in `kind:assignedReviewers`.
+  const published = (collection: Letter[]) =>
+    collection.filter((l) => l.status === 'published');
+
+  if (!shouldFetch) return { letters: published(mockLetters), isLoading: false };
   const adapted = (data ?? []).map((p) => podLetterToLetter(p, user));
-  return { letters: adapted, isLoading };
+  return { letters: published(adapted), isLoading };
 }
 
 export function useLetter(slugOrId: string | undefined): {

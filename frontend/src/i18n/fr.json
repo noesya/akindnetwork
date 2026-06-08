@@ -79,11 +79,15 @@
     "drafts": "Brouillons",
     "inReview": "En relecture",
     "published": "Publiées",
-    "toReview": "À relire pour les pairs",
     "emptyDrafts": "Aucun brouillon pour l'instant.",
     "untitledDraft": "Sans titre",
-    "emptyReview": "Rien à relire.",
+    "emptyReview": "Aucune lettre en relecture pour l'instant.",
     "emptyPublished": "Aucune lettre publiée pour l'instant.",
+    "status": {
+      "draft": "Brouillon",
+      "inReview": "En relecture",
+      "published": "Publiée"
+    },
     "languageLabel": "Langue",
     "account": "Compte",
     "connectPod": "Connecter mon Pod",

@@ -82,6 +82,11 @@
     "toReview": "Peers to review",
     "emptyDrafts": "No drafts yet.",
     "untitledDraft": "Untitled",
+    "status": {
+      "draft": "Draft",
+      "inReview": "In review",
+      "published": "Published"
+    },
     "emptyReview": "Nothing to review.",
     "emptyPublished": "No published letter yet.",
     "languageLabel": "Language",
