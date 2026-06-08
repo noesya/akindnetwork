@@ -37,24 +37,25 @@ www.akindnetwork.org {
 # ---------------------------------------------------------------------------
 # Backend API — proxied to the Moleculer service.
 #
-# CORS strategy: reflect the request's `Origin` header back as the value of
-# `Access-Control-Allow-Origin`. This is intentional, not lazy:
+# CORS strategy: two cases, both required for the SAI consent flow.
 #
-#   - Our /app descriptor and the access-need-group it points at are SAI
-#     application manifests — they're MEANT to be fetched by any Pod Provider
-#     that hosts a user trying to grant our app consent. Restricting Allow-
-#     Origin to akindnetwork.org meant Armoise's consent UI (at app.armoise.co)
-#     couldn't render: it fetches our manifest via the user's /proxy endpoint,
-#     and the browser blocked the response because Origin didn't match.
+#   Case A — request comes from a browser (Origin header present):
+#       Reflect the Origin back + Allow-Credentials: true. Lets our own
+#       frontend AND any other Pod Provider's consent UI talk to us with
+#       Bearer tokens.
 #
-#   - We can't use `*` because we send `Allow-Credentials: true` (the SemApps
-#     auth-provider includes the Bearer token via fetch credentials), and the
-#     spec forbids combining the two.
+#   Case B — request has no Origin (server-to-server, or relayed through a
+#   Pod's /proxy endpoint that strips Origin before forwarding upstream):
+#       Allow-Origin: *, no credentials. This is the path Armoise's consent
+#       UI takes: the SPA at app.armoise.co POSTs to armoise.co/<user>/proxy
+#       to fetch our /app manifest, the proxy makes a server-side GET to us
+#       with no Origin, and then relays our response (CORS headers and all)
+#       back to the browser. With `*` the browser at app.armoise.co accepts
+#       the proxied response and can render the consent screen.
 #
-#   - There is no leak risk in reflecting Origin: this backend stores no user
-#     data (it lives in user Pods), and all writes require a Bearer token tied
-#     to the user's WebID — CORS doesn't gate that, the access-grant check
-#     downstream does.
+# No leak risk: this backend stores no user data (it lives in user Pods),
+# and writes are gated by Bearer + WebACL downstream — CORS doesn't gate
+# auth.
 # ---------------------------------------------------------------------------
 api.akindnetwork.org {
     encode zstd gzip
@@ -76,26 +77,44 @@ api.akindnetwork.org {
     @cors_preflight method OPTIONS
     handle @cors_preflight {
         header {
-            Access-Control-Allow-Origin "{http.request.header.origin}"
             Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS"
             # LDP/Solid headers commonly sent by SemApps clients in addition
             # to the basics. Without these listed, the preflight fails.
             Access-Control-Allow-Headers "Authorization, Content-Type, Accept, Slug, Link, Prefer, If-Match, If-None-Match"
-            Access-Control-Allow-Credentials "true"
             Access-Control-Max-Age "86400"
             Vary "Origin"
         }
+        # Preflights match the same Case A / Case B split as the actual response.
+        @preflight_has_origin header Origin *
+        header @preflight_has_origin {
+            Access-Control-Allow-Origin "{http.request.header.origin}"
+            Access-Control-Allow-Credentials "true"
+        }
+        @preflight_no_origin {
+            not header Origin *
+        }
+        header @preflight_no_origin Access-Control-Allow-Origin "*"
         respond "" 204
     }
 
-    header {
+    # Case A: browser request → reflect Origin + credentials.
+    @cors_has_origin header Origin *
+    header @cors_has_origin {
         Access-Control-Allow-Origin "{http.request.header.origin}"
         Access-Control-Allow-Credentials "true"
+        Vary "Origin"
+    }
+    # Case B: no Origin (server-side / via Pod /proxy) → wildcard, no creds.
+    @cors_no_origin {
+        not header Origin *
+    }
+    header @cors_no_origin Access-Control-Allow-Origin "*"
+
+    header {
         # Expose headers SemApps clients READ from cross-origin responses
         # (the `Link` header carries ACL pointers, `Location` carries new
         # resource URIs after POST).
         Access-Control-Expose-Headers "Location, Link, Allow, ETag"
-        Vary "Origin"
         X-Content-Type-Options "nosniff"
         Referrer-Policy "strict-origin-when-cross-origin"
     }
