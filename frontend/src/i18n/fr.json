@@ -25,6 +25,10 @@
     "text": "Texte",
     "saveDraft": "Enregistrer en brouillon",
     "sendForReview": "Envoyer en relecture",
+    "saving": "Enregistrement…",
+    "savedDraft": "Brouillon enregistré.",
+    "sentForReview": "Lettre envoyée en relecture.",
+    "saveFailed": "Impossible d'enregistrer la lettre.",
     "wordsLeft": "{{count}} mots restants"
   },
   "limit": {

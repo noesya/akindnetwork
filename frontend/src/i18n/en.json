@@ -25,6 +25,10 @@
     "text": "Text",
     "saveDraft": "Save as draft",
     "sendForReview": "Send for peer review",
+    "saving": "Saving…",
+    "savedDraft": "Draft saved.",
+    "sentForReview": "Letter sent for peer review.",
+    "saveFailed": "Could not save the letter.",
     "wordsLeft": "{{count}} words left"
   },
   "limit": {

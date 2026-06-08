@@ -1,9 +1,11 @@
 import { useParams } from 'react-router-dom';
 import LetterEditor from '../components/LetterEditor';
-import { letters } from '../data/mock';
 
 export default function WritePage() {
+  // When the URL is /write/:draftId we hand the id down so the editor can
+  // fetch the existing record and update it. `respondsTo` is reserved for
+  // letters opened from a reading flow (TODO: pass through via location.state
+  // when wiring the "Respond" button on the read page).
   const { draftId } = useParams();
-  const respondsTo = draftId ? letters.find((l) => l.id === draftId)?.respondsTo : undefined;
-  return <LetterEditor respondsTo={respondsTo} />;
+  return <LetterEditor draftId={draftId} />;
 }
