@@ -1,3 +1,7 @@
+// Both <span> (initials) and <img> (profile picture) wear this class. The
+// <img> variant gets `object-fit: cover` so non-square photos still fill the
+// circle without distortion. `color: white` is harmless on the <img> and used
+// by the initials variant.
 .avatar {
   width: 56px;
   height: 56px;
@@ -10,6 +14,8 @@
   color: white;
   flex-shrink: 0;
   user-select: none;
+  object-fit: cover;
+  background: var(--color-surface);
 
   &--sm {
     width: 36px;

@@ -5,6 +5,11 @@ export type User = {
   bio: string;
   avatarInitials: string;
   avatarColor: string;
+  // Optional URL to an actual profile picture. When present, the Avatar
+  // component renders an <img>; when absent, it falls back to initials on a
+  // colored background. SemApps' getIdentity surfaces this from vcard:photo,
+  // foaf:img, or as:icon — whichever the Pod Provider exposes on the WebID.
+  avatarUrl?: string;
 };
 
 export type Source = {

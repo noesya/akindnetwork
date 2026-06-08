@@ -30,6 +30,15 @@ export function useCurrentUser(): {
     const webIdData = (data as any).webIdData || {};
     const storage: string | undefined =
       webIdData['pim:storage'] || webIdData.storage;
+    // SemApps' getIdentity already collapses vcard:photo / foaf:img / as:icon
+    // (which can be a string OR an object with a .url) into a single `avatar`
+    // field. Accept whatever it gives us and let the Avatar component decide
+    // how to render.
+    const avatarRaw: any = (data as any).avatar;
+    const avatarUrl: string | undefined =
+      typeof avatarRaw === 'string'
+        ? avatarRaw
+        : avatarRaw?.url || avatarRaw?.id || undefined;
     return {
       user: {
         id: webId.split('/').pop() ?? 'me',
@@ -38,6 +47,7 @@ export function useCurrentUser(): {
         bio: '',
         avatarInitials: initials(data.fullName || webId),
         avatarColor: '#314a62',
+        avatarUrl,
         isMock: false,
         storage
       },
