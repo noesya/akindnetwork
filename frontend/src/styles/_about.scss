@@ -43,6 +43,7 @@
     font-family: var(--font-serif);
     font-size: 44px;
     margin-bottom: var(--space-7);
+    text-align: center;
   }
 
   &__grid {
@@ -79,7 +80,8 @@
     display: grid;
     grid-template-columns: 1fr 2fr 1fr;
     gap: var(--space-4);
-    margin: var(--space-8) auto;
+    margin-left: auto;
+    margin-right: var(--space-8) auto;
   }
 
   &__pillar {
