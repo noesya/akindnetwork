@@ -41,9 +41,10 @@ module.exports = {
     reviewerCount: parseInt(process.env.KIND_REVIEWER_COUNT || '3', 10)
   },
 
-  // We only hard-depend on `api` so that addRoute exists. `ldp.resource` and
-  // `app-registrations` are used inside handlers — if they're slow to come
-  // up, requests will retry rather than the whole service refusing to start.
+  // We only hard-depend on `api` so that addRoute exists. The pod-resources
+  // and app-registrations services are used inside handlers — if they're
+  // slow to come up, requests will retry rather than the whole service
+  // refusing to start.
   dependencies: ['api'],
 
   async started() {
@@ -95,16 +96,17 @@ module.exports = {
       async handler(ctx) {
         const { letterUri } = ctx.params;
         const callerWebId = ctx.meta.webId;
+        if (!callerWebId || callerWebId === 'anon') {
+          throw new Error('Authentication required');
+        }
 
-        const letter = await this._fetchLetter(ctx, letterUri);
+        // The caller is also the pod owner — we read/write their letter
+        // using their AccessGrant via the FetchPodOrProxy mixin. WAC on the
+        // remote pod ensures we can only touch resources the user owns.
+        const letter = await this._fetchLetter(ctx, letterUri, callerWebId);
 
         if (letter['kind:status'] !== 'draft') {
           throw new Error(`Letter ${letterUri} is not in draft state (got "${letter['kind:status']}")`);
-        }
-
-        const author = letter['as:attributedTo'] || letter.attributedTo;
-        if (author && callerWebId !== author) {
-          throw new Error('Only the author can submit a letter for review');
         }
 
         // Refuse a re-submit of the exact same text after a prior rejection.
@@ -125,13 +127,19 @@ module.exports = {
         }
         const reviewers = this._sample(pool, this.settings.reviewerCount);
 
-        await this._patchLetter(ctx, letterUri, {
-          'kind:status': 'pending-review',
-          'kind:assignedReviewers': reviewers,
-          // Wipe any leftover vote tallies from a prior cycle.
-          'kind:approvedBy': [],
-          'kind:rejectedBy': []
-        });
+        await this._patchLetter(
+          ctx,
+          letterUri,
+          letter,
+          {
+            'kind:status': 'pending-review',
+            'kind:assignedReviewers': reviewers,
+            // Wipe any leftover vote tallies from a prior cycle.
+            'kind:approvedBy': [],
+            'kind:rejectedBy': []
+          },
+          callerWebId
+        );
 
         ctx.emit('kind.letter.submitted', { letterUri, authorWebId: callerWebId, reviewers });
 
@@ -141,18 +149,40 @@ module.exports = {
   },
 
   methods: {
-    async _fetchLetter(ctx, letterUri) {
-      return ctx.call('ldp.resource.get', {
+    /**
+     * Read a Letter from the author's Pod via the SAI proxy + signature
+     * dance. `actorUri` is the Pod owner (same as the caller for our flow).
+     * pod-resources.get returns { ok, status, body } — body is the parsed
+     * JSON-LD when ok=true.
+     */
+    async _fetchLetter(ctx, letterUri, actorUri) {
+      const { ok, status, body } = await ctx.call('pod-resources.get', {
         resourceUri: letterUri,
-        accept: 'application/ld+json'
+        actorUri
       });
+      if (!ok) {
+        throw new Error(`Could not fetch letter ${letterUri}: HTTP ${status}`);
+      }
+      return body;
     },
 
-    async _patchLetter(ctx, letterUri, patch) {
-      return ctx.call('ldp.resource.patch', {
-        resource: { id: letterUri, ...patch },
-        contentType: 'application/ld+json'
+    /**
+     * "Patch" by GET → merge → PUT. We use PUT (full replacement) rather
+     * than pod-resources.patch because patch expects sparqljs RDF triple
+     * structures, whereas our updates are plain key/value JSON-LD. The GET
+     * we just did above is reused — caller passes it in as `current` to
+     * avoid a redundant round-trip.
+     */
+    async _patchLetter(ctx, letterUri, current, patch, actorUri) {
+      const merged = { ...current, ...patch, id: letterUri };
+      const { ok, status } = await ctx.call('pod-resources.put', {
+        resource: merged,
+        actorUri
       });
+      if (!ok) {
+        throw new Error(`Could not update letter ${letterUri}: HTTP ${status}`);
+      }
+      return merged;
     },
 
     /**
