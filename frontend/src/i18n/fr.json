@@ -9,10 +9,10 @@
     "by": "Par",
     "writtenOn": "Écrit le",
     "inResponseTo": "En réponse à",
-    "when": "Quand ?",
-    "about": "À propos ?",
+    "when": "Quand ?",
+    "about": "À propos ?",
     "approvedBy": "Approuvée par",
-    "sources": "Sources ?",
+    "sources": "Sources ?",
     "status": "Statut",
     "respondPublicly": "Répondre publiquement",
     "writeToAuthor": "Écrire à {{name}}",
@@ -58,17 +58,17 @@
     "pillarsTitle": "Structure",
     "pillars":{
       "who": {
-        "title": "Quelle personne ?",
+        "title": "Quelle personne ?",
         "sub": "Ce que je suis",
-        "detail": "D'où je parle ? Quelles sont mes croyances ? Quelles sont mes opinions ?"
+        "detail": "D'où je parle ? Quelles sont mes croyances ? Quelles sont mes opinions ?"
       },
       "what": {
-        "title": "Quel propos ?",
+        "title": "Quel propos ?",
         "sub": "Ce que je dis",
-        "detail": "À propos de quoi ? Sur quel thème ? Dans quel temps ?"
+        "detail": "À propos de quoi ? Sur quel thème ? Dans quel temps ?"
       },
       "proof": {
-        "title": "Quelles preuves ?",
+        "title": "Quelles preuves ?",
         "sub": "Ce que je sais",
         "detail": "Les sources, la traçabilité, les précisions contextuelles (fact-checking)"
       }
