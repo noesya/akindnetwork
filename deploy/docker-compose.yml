@@ -39,9 +39,13 @@ services:
     env_file:
       - .env
     environment:
-      # Internal hostnames take precedence over .env values.
+      # Internal hostnames take precedence over .env values. Two Redis DBs:
+      #   /7 → SemApps CacherMiddleware (action result cache)
+      #   /8 → Moleculer transporter + BullMQ activity queue
+      # Convention lifted from activitypods/app-boilerplate.
       SPARQL_ENDPOINT: http://fuseki:3030
-      REDIS_URL: redis://redis:6379
+      REDIS_CACHE_URL: redis://redis:6379/7
+      REDIS_URL: redis://redis:6379/8
     volumes:
       # HTTP-signature keypairs (one per ActivityPub actor) — must survive
       # container restarts otherwise every redeploy invalidates federation

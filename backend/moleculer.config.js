@@ -2,8 +2,24 @@
 
 require('dotenv').config();
 
+const { WebAclMiddleware, CacherMiddleware } = require('@semapps/webacl');
 const rateLimit = require('./services/middlewares/rate-limit');
 const timeWindow = require('./services/middlewares/time-window');
+
+// SemApps' action cacher — uses a dedicated Redis DB (or memory if unset) for
+// inter-action result caching. The boilerplate strongly recommends putting it
+// in front of the WebACL middleware, which itself relies on this cache to
+// keep ACL checks cheap.
+const cacherConfig = process.env.REDIS_CACHE_URL
+  ? {
+      type: 'Redis',
+      options: {
+        prefix: 'action',
+        ttl: 2592000, // 30 days
+        redis: process.env.REDIS_CACHE_URL
+      }
+    }
+  : undefined;
 
 module.exports = {
   namespace: 'kind',
@@ -12,6 +28,7 @@ module.exports = {
   logger: {
     type: 'Console',
     options: {
+      formatter: 'short',
       level: process.env.LOG_LEVEL || 'info'
     }
   },
@@ -21,13 +38,20 @@ module.exports = {
   // a `url` key in its options object — it'd silently fall back to localhost.
   transporter: process.env.REDIS_URL || null,
 
-  // Cache & metrics: kept simple for dev. Re-enable Prometheus when going to prod.
-  cacher: 'Memory',
-
-  // Custom Kind middlewares — registered globally so they wrap every action.
-  // Each middleware is responsible for short-circuiting only the actions it cares
-  // about (cf. their internal action-name filters).
-  middlewares: [rateLimit, timeWindow],
+  // Middleware order matters:
+  //   1. CacherMiddleware — must come BEFORE WebAclMiddleware so ACL checks
+  //      can leverage the cache (boilerplate convention).
+  //   2. WebAclMiddleware — enforces Solid WebACL on every LDP action AND
+  //      properly sequences ldp.resource.created events behind the SPARQL
+  //      transaction commit. Without it, our `appendActorData` listener
+  //      fires before the resource is queryable → race condition.
+  //   3. Kind-specific middlewares — the 17/day + 22h-7h business rules.
+  middlewares: [
+    CacherMiddleware(cacherConfig),
+    WebAclMiddleware({ baseUrl: process.env.APP_BASE_URL }),
+    rateLimit,
+    timeWindow
+  ],
 
   // Misc
   requestTimeout: 30 * 1000,
