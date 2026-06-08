@@ -112,3 +112,11 @@ jobs:
       - name: Compose up
         run: |
           ssh vps 'cd /opt/kind && docker compose up -d --build --remove-orphans && docker compose ps'
+
+      # Caddy doesn't watch its mounted config file, so a pure `compose up`
+      # leaves it running with the old Caddyfile when only that file changed.
+      # `caddy reload` is a graceful in-process swap — no dropped connections,
+      # safe to run unconditionally on every deploy.
+      - name: Reload Caddy config
+        run: |
+          ssh vps 'docker compose -f /opt/kind/docker-compose.yml exec -T caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile'
