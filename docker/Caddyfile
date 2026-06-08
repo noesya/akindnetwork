@@ -37,16 +37,30 @@ www.akindnetwork.org {
 # ---------------------------------------------------------------------------
 # Backend API — proxied to the Moleculer service.
 #
-# CORS is required: the SPA at akindnetwork.org is a different origin from
-# api.akindnetwork.org, so the browser would block requests without the right
-# Access-Control-Allow-* response headers. We allow only our own frontend
-# origin (no wildcard) and only the verbs we actually use.
+# CORS strategy: reflect the request's `Origin` header back as the value of
+# `Access-Control-Allow-Origin`. This is intentional, not lazy:
+#
+#   - Our /app descriptor and the access-need-group it points at are SAI
+#     application manifests — they're MEANT to be fetched by any Pod Provider
+#     that hosts a user trying to grant our app consent. Restricting Allow-
+#     Origin to akindnetwork.org meant Armoise's consent UI (at app.armoise.co)
+#     couldn't render: it fetches our manifest via the user's /proxy endpoint,
+#     and the browser blocked the response because Origin didn't match.
+#
+#   - We can't use `*` because we send `Allow-Credentials: true` (the SemApps
+#     auth-provider includes the Bearer token via fetch credentials), and the
+#     spec forbids combining the two.
+#
+#   - There is no leak risk in reflecting Origin: this backend stores no user
+#     data (it lives in user Pods), and all writes require a Bearer token tied
+#     to the user's WebID — CORS doesn't gate that, the access-grant check
+#     downstream does.
 # ---------------------------------------------------------------------------
 api.akindnetwork.org {
     encode zstd gzip
 
     # Moleculer-Web emits its own CORS headers, with `*` for the origin. Combined
-    # with ours (specific origin), the browser sees two `Access-Control-Allow-Origin`
+    # with ours (reflected), the browser sees two `Access-Control-Allow-Origin`
     # headers and rejects the response. We strip every upstream CORS header
     # before the reverse_proxy returns, then add our own controlled set below.
     reverse_proxy moleculer:3000 {
@@ -62,19 +76,20 @@ api.akindnetwork.org {
     @cors_preflight method OPTIONS
     handle @cors_preflight {
         header {
-            Access-Control-Allow-Origin "https://akindnetwork.org"
+            Access-Control-Allow-Origin "{http.request.header.origin}"
             Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS"
             # LDP/Solid headers commonly sent by SemApps clients in addition
             # to the basics. Without these listed, the preflight fails.
             Access-Control-Allow-Headers "Authorization, Content-Type, Accept, Slug, Link, Prefer, If-Match, If-None-Match"
             Access-Control-Allow-Credentials "true"
             Access-Control-Max-Age "86400"
+            Vary "Origin"
         }
         respond "" 204
     }
 
     header {
-        Access-Control-Allow-Origin "https://akindnetwork.org"
+        Access-Control-Allow-Origin "{http.request.header.origin}"
         Access-Control-Allow-Credentials "true"
         # Expose headers SemApps clients READ from cross-origin responses
         # (the `Link` header carries ACL pointers, `Location` carries new
