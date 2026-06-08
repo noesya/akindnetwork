@@ -25,7 +25,7 @@ module.exports = {
     baseUrl: process.env.APP_BASE_URL,
     app: {
       name: 'A kind network',
-      description: 'A kind network — Peer-reviewed, federated, post-growth',
+      description: 'Peer-reviewed, federated, post-growth',
       thumbnail: `${process.env.APP_FRONT_URL || ''}/images/logo192.png`,
       frontUrl: process.env.APP_FRONT_URL,
       supportedLocales: ['fr', 'en']
