@@ -113,10 +113,12 @@ jobs:
         run: |
           ssh vps 'cd /opt/kind && docker compose up -d --build --remove-orphans && docker compose ps'
 
-      # Caddy doesn't watch its mounted config file, so a pure `compose up`
-      # leaves it running with the old Caddyfile when only that file changed.
-      # `caddy reload` is a graceful in-process swap — no dropped connections,
-      # safe to run unconditionally on every deploy.
-      - name: Reload Caddy config
+      # Caddy doesn't watch its mounted config file, so `compose up` leaves it
+      # running with the old Caddyfile when only that file changed. `caddy
+      # reload` SHOULD do a graceful in-process swap, but in practice the CLI
+      # exits success even when the admin API never accepts the new config.
+      # A full restart is ~1s of downtime against a fresh-served TLS — fine in
+      # exchange for being sure the new config actually applies.
+      - name: Restart Caddy
         run: |
-          ssh vps 'docker compose -f /opt/kind/docker-compose.yml exec -T caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile'
+          ssh vps 'docker compose -f /opt/kind/docker-compose.yml restart caddy && docker compose -f /opt/kind/docker-compose.yml logs --tail 20 caddy'
