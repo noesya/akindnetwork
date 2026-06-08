@@ -14,28 +14,30 @@ type PodLetter = {
 };
 
 /**
- * /write is now a small workspace page rather than the editor itself.
+ * /write — a single page with the editor at the top and the user's drafts +
+ * in-review letters listed below.
  *
  * Routes:
- *   /write            → this workspace (drafts list + in-review list + "+ New")
- *   /write/new        → empty LetterEditor for composing a new letter
- *   /write/:draftId   → LetterEditor loaded with an existing draft
+ *   /write          → blank editor + lists
+ *   /write/:slug    → editor pre-loaded with that draft + same lists
  *
- * Sitting drafts + in-review under /write (not /me) matches the mental model
- * "writing is one continuous workspace": save a draft, come back to it,
- * watch it move into review, all without changing pages.
+ * "+ Nouvelle lettre" (rendered above the lists when a draft is loaded)
+ * resets the editor by navigating back to /write.
  */
 export default function WritePage() {
   const { draftId } = useParams();
-  // Two sub-modes: editor (/write/new or /write/:draftId) or workspace (/write).
-  // We treat the literal slug "new" as "no draft yet" so the editor starts
-  // blank rather than trying to fetch a record named `new`.
-  if (draftId === 'new') return <LetterEditor />;
-  if (draftId) return <LetterEditor draftId={draftId} />;
-  return <Workspace />;
+  // Historical: /write/new used to mean "blank editor" when the workspace was
+  // a separate page. We keep the alias working so bookmarked URLs don't break.
+  const effectiveId = draftId === 'new' ? undefined : draftId;
+  return (
+    <>
+      <LetterEditor draftId={effectiveId} />
+      <DraftsAndReview hasOpenDraft={Boolean(effectiveId)} />
+    </>
+  );
 }
 
-function Workspace() {
+function DraftsAndReview({ hasOpenDraft }: { hasOpenDraft: boolean }) {
   const { t, i18n } = useTranslation();
   const { isAuthenticated } = useCurrentUser();
 
@@ -51,24 +53,24 @@ function Workspace() {
   const drafts = podLetters.filter((l) => l['kind:status'] === 'draft');
   const inReview = podLetters.filter((l) => l['kind:status'] === 'pending-review');
 
+  if (!isAuthenticated) return null;
+  // Nothing to show in the lists for a fresh user with no drafts. Surface a
+  // "+ Nouvelle lettre" link only when we're editing something — the implicit
+  // affordance of clearing the editor.
+  if (drafts.length === 0 && inReview.length === 0 && !hasOpenDraft) return null;
+
   return (
-    <div className="me">
-      <header className="me__header">
-        <div>
-          <div className="me__name">{t('write.workspaceTitle')}</div>
-          <div className="me__webid">{t('write.workspaceHint')}</div>
-        </div>
-        <Link to="/write/new" className="btn" style={{ marginLeft: 'auto' }}>
+    <div className="me" style={{ marginTop: 'var(--space-9)' }}>
+      {hasOpenDraft && (
+        <Link to="/write" className="btn" style={{ marginBottom: 'var(--space-6)' }}>
           {t('write.newLetter')}
         </Link>
-      </header>
+      )}
 
-      <section className="me__section">
-        <h2 className="me__section-title">{t('me.drafts')}</h2>
-        {drafts.length === 0 ? (
-          <p className="muted">{t('me.emptyDrafts')}</p>
-        ) : (
-          drafts.map((l) => (
+      {drafts.length > 0 && (
+        <section className="me__section">
+          <h2 className="me__section-title">{t('me.drafts')}</h2>
+          {drafts.map((l) => (
             <Link key={l.id} to={`/write/${toSlug(l.id)}`} className="me__item">
               <span>{l.name || t('me.untitledDraft')}</span>
               <span className="me__item-meta">
@@ -76,16 +78,14 @@ function Workspace() {
                 {formatDate(l['dc:modified'] || l['dc:created'], i18n.language)}
               </span>
             </Link>
-          ))
-        )}
-      </section>
+          ))}
+        </section>
+      )}
 
-      <section className="me__section">
-        <h2 className="me__section-title">{t('me.inReview')}</h2>
-        {inReview.length === 0 ? (
-          <p className="muted">{t('me.emptyReview')}</p>
-        ) : (
-          inReview.map((l) => (
+      {inReview.length > 0 && (
+        <section className="me__section">
+          <h2 className="me__section-title">{t('me.inReview')}</h2>
+          {inReview.map((l) => (
             <Link key={l.id} to={`/write/${toSlug(l.id)}`} className="me__item">
               <span>{l.name || t('me.untitledDraft')}</span>
               <span className="me__item-meta">
@@ -93,9 +93,9 @@ function Workspace() {
                 {formatDate(l['dc:modified'] || l['dc:created'], i18n.language)}
               </span>
             </Link>
-          ))
-        )}
-      </section>
+          ))}
+        </section>
+      )}
     </div>
   );
 }
