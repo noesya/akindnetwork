@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import type { Letter, Source } from '../data/mock';
+import type { Letter, Source, User } from '../data/mock';
 import { users } from '../data/mock';
+import { useCurrentUser } from '../hooks/useCurrentUser';
+import { toSlug } from '../lib/letterSlug';
 import Avatar from './Avatar';
 import SidebarField from './SidebarField';
 import SourceModal from './SourceModal';
@@ -10,7 +12,15 @@ import SourceModal from './SourceModal';
 export default function LetterView({ letter, showActions = true }: { letter: Letter; showActions?: boolean }) {
   const { t, i18n } = useTranslation();
   const [openSource, setOpenSource] = useState<Source | null>(null);
-  const author = users[letter.authorId];
+  const { user: me } = useCurrentUser();
+  // Letters fetched from a Pod carry the WebID-derived authorId (e.g.
+  // "arnaudlevy") which won't be in the mock `users` map. Fall back to the
+  // current user when authoring matches them, then to a minimal stub so the
+  // sidebar still renders.
+  const author: User =
+    users[letter.authorId] ||
+    (letter.authorId === me.id ? me : null) ||
+    { id: letter.authorId, webId: '', name: letter.authorId, bio: '', avatarInitials: '?', avatarColor: '#314a62' };
 
   return (
     <>
@@ -26,11 +36,11 @@ export default function LetterView({ letter, showActions = true }: { letter: Let
             <div style={{ marginBottom: 'var(--space-6)', fontSize: 14, color: 'var(--color-text-muted)' }}>
               <span className="muted">{t('letter.inResponseTo')}</span>
               <br />
-              <Link to={`/read/${letter.respondsTo.id}`}>
+              <Link to={`/read/${toSlug(letter.respondsTo.id)}`}>
                 « {letter.respondsTo.title} »
               </Link>{' '}
               <span className="muted">
-                {t('letter.byAuthor', { name: users[letter.respondsTo.authorId].name })},{' '}
+                {t('letter.byAuthor', { name: users[letter.respondsTo.authorId]?.name ?? letter.respondsTo.authorId })},{' '}
                 {formatDate(letter.respondsTo.publishedAt, i18n.language)}.
               </span>
             </div>

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import LetterView from '../components/LetterView';
 import Thread from '../components/Thread';
 import { useLetters, useComments } from '../hooks/useLetters';
+import { toSlug } from '../lib/letterSlug';
 
 export default function ReadPage() {
   const { t, i18n } = useTranslation();
@@ -23,7 +24,7 @@ export default function ReadPage() {
 
   return (
     <>
-      <ReadNav current={1} total={letters.length} prevId={null} nextId={letters[1]?.id ?? null} />
+      <ReadNav current={1} total={letters.length} prevId={null} nextId={letters[1] ? toSlug(letters[1].id) : null} />
       <LetterView letter={letter} />
       <Thread comments={letterComments} />
     </>
