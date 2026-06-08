@@ -7,7 +7,11 @@
 import { useGetIdentity } from 'ra-core';
 import { currentUser as mockUser, type User } from '../data/mock';
 
-export type CurrentUser = User & { isMock: boolean };
+// `storage` is the user's `pim:storage` URI — the container under which all
+// of their resources live (Letters, profile, etc.). Lifted out of the WebID
+// document by SemApps' getIdentity, surfaced here so the rest of the app
+// (LetterEditor, MePage…) can build short Solid URIs without re-fetching it.
+export type CurrentUser = User & { isMock: boolean; storage?: string };
 
 export function useCurrentUser(): {
   user: CurrentUser;
@@ -23,6 +27,9 @@ export function useCurrentUser(): {
   if (data && data.id) {
     // Map react-admin's identity payload onto our User shape.
     const webId = String(data.id);
+    const webIdData = (data as any).webIdData || {};
+    const storage: string | undefined =
+      webIdData['pim:storage'] || webIdData.storage;
     return {
       user: {
         id: webId.split('/').pop() ?? 'me',
@@ -31,7 +38,8 @@ export function useCurrentUser(): {
         bio: '',
         avatarInitials: initials(data.fullName || webId),
         avatarColor: '#314a62',
-        isMock: false
+        isMock: false,
+        storage
       },
       isAuthenticated: true,
       isLoading: false

@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useCreate, useGetOne, useNotify, useUpdate } from 'ra-core';
 import { useNavigate } from 'react-router-dom';
 import type { Letter } from '../data/mock';
 import { useCurrentUser } from '../hooks/useCurrentUser';
+import { fromSlug, toSlug } from '../lib/letterSlug';
 import SidebarField from './SidebarField';
 
 const MAX_WORDS = 500;
@@ -13,9 +14,9 @@ type Status = 'draft' | 'pending-review';
 
 type Props = {
   respondsTo?: Letter['respondsTo'];
-  // When the route is /write/:draftId the parent passes the id here so the
-  // editor can fetch the existing record and update it on save instead of
-  // creating a duplicate.
+  // When the route is /write/:draftId the parent passes the slug down — it's
+  // the last path segment of the Letter's Solid URI (eg. a UUID). We rebuild
+  // the full URI before talking to the dataProvider.
   draftId?: string;
 };
 
@@ -38,17 +39,30 @@ export default function LetterEditor({ respondsTo, draftId: draftIdProp }: Props
   const notify = useNotify();
   const { user } = useCurrentUser();
 
-  const [letterId, setLetterId] = useState<string | undefined>(draftIdProp);
+  // Resolve the slug (from the URL param) to a full Solid URI. We can only do
+  // this once we know the user's `pim:storage`; until then `useGetOne` stays
+  // disabled (see `enabled` below).
+  const letterUri = useMemo(
+    () => (draftIdProp ? fromSlug(draftIdProp, user.storage) : undefined),
+    [draftIdProp, user.storage]
+  );
+  const [letterId, setLetterId] = useState<string | undefined>(letterUri);
+  useEffect(() => {
+    if (letterUri) setLetterId(letterUri);
+  }, [letterUri]);
+
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [hydrated, setHydrated] = useState(false);
 
-  // Fetch existing draft so /write/<id> shows the saved content. Skipped when
-  // there's no id (i.e. user is creating a new letter).
+  // Fetch existing draft so /write/<slug> shows the saved content. Skipped
+  // when there's no id, or when the URI couldn't be resolved yet (we'd
+  // otherwise fire a fetch on the bare slug and get a 404).
+  const canFetch = !!letterId && letterId.startsWith('http') && !hydrated;
   const { data: existing } = useGetOne<any>(
     RESOURCE,
     { id: letterId || '' },
-    { enabled: !!letterId && !hydrated }
+    { enabled: canFetch }
   );
   useEffect(() => {
     if (existing && !hydrated) {
@@ -91,8 +105,10 @@ export default function LetterEditor({ respondsTo, draftId: draftIdProp }: Props
       if (id && !letterId) {
         setLetterId(id);
         // Replace so the browser back-button still goes to wherever the user
-        // came from (rather than the empty /write).
-        navigate(`/write/${encodeURIComponent(id)}`, { replace: true });
+        // came from (rather than the empty /write). We navigate to the short
+        // slug — the full URI is recoverable from the user's pim:storage on
+        // refresh.
+        navigate(`/write/${toSlug(id)}`, { replace: true });
       }
       after?.();
     };

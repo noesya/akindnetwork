@@ -81,6 +81,7 @@
     "published": "Published",
     "toReview": "Peers to review",
     "emptyDrafts": "No drafts yet.",
+    "untitledDraft": "Untitled",
     "emptyReview": "Nothing to review.",
     "emptyPublished": "No published letter yet.",
     "languageLabel": "Language",

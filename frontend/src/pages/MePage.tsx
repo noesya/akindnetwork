@@ -1,18 +1,46 @@
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { useLogout } from 'ra-core';
+import { useGetList, useLogout } from 'ra-core';
 import { letters } from '../data/mock';
 import Avatar from '../components/Avatar';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { isAuthConfigured } from '../providers/setup';
+import { toSlug } from '../lib/letterSlug';
+
+type PodLetter = {
+  id: string;
+  name?: string;
+  content?: string;
+  'kind:status'?: 'draft' | 'pending-review' | 'published';
+  'dc:created'?: string;
+  'dc:modified'?: string;
+};
 
 export default function MePage() {
   const { t, i18n } = useTranslation();
   const logout = useLogout();
   const { user, isAuthenticated } = useCurrentUser();
 
-  const myDrafts: typeof letters = [];
-  const myPublished = letters.filter((l) => l.authorId === user.id);
+  // Pull every Letter the user can read (server-side WebACL already filters
+  // to their own + shared-in). We bucket by `kind:status` client-side rather
+  // than relying on filter support, which is uneven across SemApps
+  // dataProviders for non-standard predicates.
+  const { data: rawLetters } = useGetList<PodLetter>(
+    'Letter',
+    {
+      pagination: { page: 1, perPage: 200 },
+      sort: { field: 'dc:modified', order: 'DESC' }
+    },
+    { enabled: isAuthenticated }
+  );
+  const podLetters: PodLetter[] = rawLetters || [];
+  const myDrafts = podLetters.filter((l) => l['kind:status'] === 'draft');
+  const myInReview = podLetters.filter((l) => l['kind:status'] === 'pending-review');
+  const myPodPublished = podLetters.filter((l) => l['kind:status'] === 'published');
+  // Fall back to mock published letters when no Pod is connected (demo mode).
+  const myPublished = isAuthenticated
+    ? myPodPublished
+    : letters.filter((l) => l.authorId === user.id);
 
   const changeLang = (lng: 'fr' | 'en') => {
     i18n.changeLanguage(lng);
@@ -51,9 +79,35 @@ export default function MePage() {
           <p className="muted">{t('me.emptyDrafts')}</p>
         ) : (
           myDrafts.map((l) => (
-            <Link key={l.id} to={`/write/${l.id}`} className="me__item">
-              <span>{l.title}</span>
-              <span className="me__item-meta">draft</span>
+            <Link
+              key={l.id}
+              to={`/write/${toSlug(l.id)}`}
+              className="me__item"
+            >
+              <span>{l.name || t('me.untitledDraft')}</span>
+              <span className="me__item-meta">
+                {formatDate(l['dc:modified'] || l['dc:created'], i18n.language)}
+              </span>
+            </Link>
+          ))
+        )}
+      </section>
+
+      <section className="me__section">
+        <h2 className="me__section-title">{t('me.inReview')}</h2>
+        {myInReview.length === 0 ? (
+          <p className="muted">{t('me.emptyReview')}</p>
+        ) : (
+          myInReview.map((l) => (
+            <Link
+              key={l.id}
+              to={`/write/${toSlug(l.id)}`}
+              className="me__item"
+            >
+              <span>{l.name || t('me.untitledDraft')}</span>
+              <span className="me__item-meta">
+                {formatDate(l['dc:modified'] || l['dc:created'], i18n.language)}
+              </span>
             </Link>
           ))
         )}
@@ -64,14 +118,25 @@ export default function MePage() {
         {myPublished.length === 0 ? (
           <p className="muted">{t('me.emptyPublished')}</p>
         ) : (
-          myPublished.map((l) => (
-            <Link key={l.id} to={`/read/${l.id}`} className="me__item">
-              <span>{l.title}</span>
-              <span className="me__item-meta">
-                {new Date(l.publishedAt).toLocaleDateString(i18n.language === 'fr' ? 'fr-FR' : 'en-GB')}
-              </span>
-            </Link>
-          ))
+          myPublished.map((l) => {
+            const title = 'title' in l ? l.title : l.name;
+            const dateStr =
+              'publishedAt' in l
+                ? new Date(l.publishedAt).toLocaleDateString(
+                    i18n.language === 'fr' ? 'fr-FR' : 'en-GB'
+                  )
+                : formatDate(l['dc:modified'] || l['dc:created'], i18n.language);
+            return (
+              <Link
+                key={l.id}
+                to={`/read/${toSlug(l.id)}`}
+                className="me__item"
+              >
+                <span>{title}</span>
+                <span className="me__item-meta">{dateStr}</span>
+              </Link>
+            );
+          })
         )}
       </section>
 
@@ -99,4 +164,15 @@ export default function MePage() {
       </section>
     </div>
   );
+}
+
+function formatDate(iso: string | undefined, lang: string): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  return d.toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  });
 }
