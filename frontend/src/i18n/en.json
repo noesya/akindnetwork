@@ -17,7 +17,8 @@
     "respondPublicly": "Respond publicly",
     "writeToAuthor": "Write to {{name}}",
     "byAuthor": "by {{name}}",
-    "contribute": "Contribute"
+    "contribute": "Contribute",
+    "noLetterYet": "No letter yet."
   },
   "editor": {
     "newLetter": "New letter",

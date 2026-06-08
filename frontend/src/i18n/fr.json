@@ -17,7 +17,8 @@
     "respondPublicly": "Répondre publiquement",
     "writeToAuthor": "Écrire à {{name}}",
     "byAuthor": "par {{name}}",
-    "contribute": "Contribuer"
+    "contribute": "Contribuer",
+    "noLetterYet": "Il n'y a pas encore de lettre."
   },
   "editor": {
     "newLetter": "Nouvelle lettre",

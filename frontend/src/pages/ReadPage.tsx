@@ -1,9 +1,11 @@
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import LetterView from '../components/LetterView';
 import Thread from '../components/Thread';
 import { useLetters, useComments } from '../hooks/useLetters';
 
 export default function ReadPage() {
+  const { t, i18n } = useTranslation();
   const { letters, isLoading } = useLetters();
   const letter = letters[0];
   const { comments: letterComments } = useComments(letter?.id);
@@ -14,7 +16,7 @@ export default function ReadPage() {
   if (!letter) {
     return (
       <div style={{ textAlign: 'center', marginTop: 'var(--space-7)' }}>
-        <p className="muted">No letter yet.</p>
+        <p className="muted">{t('letter.noLetterYet')}</p>
       </div>
     );
   }
