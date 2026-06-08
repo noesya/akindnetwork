@@ -66,9 +66,9 @@ module.exports = {
           bodyParsers: { json: true },
           mappingPolicy: 'restrict',
           aliases: {
-            'POST /peer-review/submit-draft': 'kind-peer-review.submitDraft'
-            // 'POST /peer-review/approve'      → étape 3
-            // 'POST /peer-review/reject'       → étape 3
+            'POST /peer-review/submit-draft': 'kind-peer-review.submitDraft',
+            'POST /peer-review/approve': 'kind-peer-review.approve',
+            'POST /peer-review/reject': 'kind-peer-review.reject'
           }
         },
         toBottom: false
@@ -166,10 +166,172 @@ module.exports = {
 
         return { reviewers };
       }
+    },
+
+    /**
+     * A reviewer votes "approve" on a letter awaiting review.
+     *
+     * Rules:
+     *   - Caller must be in `kind:assignedReviewers`
+     *   - Caller must not have already voted (approve OR reject)
+     *   - After tallying, if approves ≥ threshold → status flips to "published"
+     *
+     * The caller is the REVIEWER; the resource being patched lives on the
+     * AUTHOR'S Pod. We use pod-resources with `actorUri = authorWebId` so the
+     * request is signed as the app acting on behalf of the author (via the
+     * AccessGrant the author granted on SAI consent), which is what the
+     * remote Pod's WAC will accept for a write on the author's resource.
+     */
+    approve: {
+      params: { letterUri: 'string' },
+      async handler(ctx) {
+        return this._castVote(ctx, { decision: 'approve', comment: null });
+      }
+    },
+
+    /**
+     * A reviewer votes "reject" on a letter, with a mandatory short comment
+     * the author will see. After tallying, if rejects ≥ threshold the letter
+     * bounces back to "draft" — the author can edit and resubmit, but a
+     * verbatim resubmission is refused via the stored content hash.
+     */
+    reject: {
+      params: {
+        letterUri: 'string',
+        comment: { type: 'string', min: 1, max: 500 }
+      },
+      async handler(ctx) {
+        return this._castVote(ctx, { decision: 'reject', comment: ctx.params.comment });
+      }
     }
   },
 
   methods: {
+    /**
+     * Shared body of `approve` and `reject`. Both follow the exact same dance
+     * (find author → fetch letter → check assignment → record vote → tally),
+     * just with different mutation shapes.
+     */
+    async _castVote(ctx, { decision, comment }) {
+      const { letterUri } = ctx.params;
+      const reviewerWebId = ctx.meta.webId;
+      this.logger.info(
+        `${decision} called: letterUri=${letterUri} reviewer=${reviewerWebId}`
+      );
+      if (!reviewerWebId || reviewerWebId === 'anon') {
+        throw new MoleculerClientError('Authentication required', 401, 'UNAUTHORIZED');
+      }
+
+      const authorWebId = this._extractAuthorWebId(letterUri);
+      if (!authorWebId) {
+        throw new MoleculerClientError(
+          `Cannot determine author from letter URI ${letterUri}`,
+          400,
+          'BAD_LETTER_URI'
+        );
+      }
+
+      const letter = await this._fetchLetter(ctx, letterUri, authorWebId);
+
+      if (letter['kind:status'] !== 'pending-review') {
+        throw new MoleculerClientError(
+          `Letter is not awaiting review (current status: ${letter['kind:status'] || 'unknown'})`,
+          409,
+          'NOT_IN_REVIEW'
+        );
+      }
+
+      const assigned = this._asArray(letter['kind:assignedReviewers']);
+      if (!assigned.includes(reviewerWebId)) {
+        throw new MoleculerClientError(
+          'You are not assigned as a reviewer for this letter',
+          403,
+          'NOT_ASSIGNED'
+        );
+      }
+
+      // A reviewer gets exactly one ballot — checking both lists prevents
+      // both "vote twice the same way" and "approve then change to reject".
+      const approvedBy = this._asArray(letter['kind:approvedBy']);
+      const rejectedBy = this._asArray(letter['kind:rejectedBy']);
+      const alreadyVoted =
+        approvedBy.includes(reviewerWebId) ||
+        rejectedBy.some(r => (typeof r === 'string' ? r : r?.reviewer) === reviewerWebId);
+      if (alreadyVoted) {
+        throw new MoleculerClientError(
+          'You have already voted on this letter',
+          409,
+          'ALREADY_VOTED'
+        );
+      }
+
+      // Tally with the new vote applied.
+      const nextApproved = decision === 'approve'
+        ? [...approvedBy, reviewerWebId]
+        : approvedBy;
+      const nextRejected = decision === 'reject'
+        ? [...rejectedBy, { reviewer: reviewerWebId, comment }]
+        : rejectedBy;
+
+      const patch = {
+        'kind:approvedBy': nextApproved,
+        'kind:rejectedBy': nextRejected
+      };
+
+      // Aggregation: threshold reached either way → final state.
+      //   ≥ threshold approves : publish
+      //   ≥ threshold rejects  : back to draft, store content hash to
+      //                          prevent verbatim resubmit
+      // Below threshold: letter stays in pending-review until the third vote.
+      if (nextApproved.length >= this.settings.threshold) {
+        patch['kind:status'] = 'published';
+        patch['as:published'] = new Date().toISOString();
+      } else if (nextRejected.length >= this.settings.threshold) {
+        patch['kind:status'] = 'draft';
+        patch['kind:rejectedContentHash'] = this._hashContent(letter);
+        // Carry the rejection reasons forward as `kind:rejectionReasons` so
+        // the editor can surface them; `kind:approvedBy` is wiped so the
+        // next review cycle starts fresh.
+        patch['kind:rejectionReasons'] = nextRejected;
+        patch['kind:approvedBy'] = [];
+        patch['kind:rejectedBy'] = [];
+        patch['kind:assignedReviewers'] = [];
+      }
+
+      await this._patchLetter(ctx, letterUri, letter, patch, authorWebId);
+
+      const finalStatus = patch['kind:status'] || 'pending-review';
+      ctx.emit(`kind.letter.${decision}d`, {
+        letterUri,
+        authorWebId,
+        reviewerWebId,
+        finalStatus
+      });
+
+      return {
+        status: finalStatus,
+        approvedCount: nextApproved.length,
+        rejectedCount: nextRejected.length,
+        threshold: this.settings.threshold
+      };
+    },
+
+    /**
+     * Parse the author's WebID from a Letter URI. SemApps Pods host user
+     * resources under `https://<host>/<username>/data/<uuid>`, so the WebID
+     * is `https://<host>/<username>` (everything up to but not including
+     * `/data/`). Returns null on a URI that doesn't match the pattern.
+     */
+    _extractAuthorWebId(letterUri) {
+      const m = letterUri.match(/^(https?:\/\/[^/]+\/[^/]+)\/data\//);
+      return m ? m[1] : null;
+    },
+
+    _asArray(v) {
+      if (v == null) return [];
+      return Array.isArray(v) ? v : [v];
+    },
+
     /**
      * Read a Letter from the author's Pod via the SAI proxy + signature
      * dance. `actorUri` is the Pod owner (same as the caller for our flow).

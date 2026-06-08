@@ -44,7 +44,12 @@ export default function WritePage() {
 
   return (
     <>
-      <LetterEditor draftId={effectiveId} />
+      {/* `key` forces a fresh LetterEditor on every draftId change. Without
+        it the editor keeps the previous draft's title/body in local state
+        and the `hydrated` guard prevents re-hydration when the user clicks
+        a different draft in the list below. Remounting is the simplest
+        correct reset. */}
+      <LetterEditor key={effectiveId || 'new'} draftId={effectiveId} />
       <DraftsAndReview hasOpenDraft={Boolean(effectiveId)} />
     </>
   );
