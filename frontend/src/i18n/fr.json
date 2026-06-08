@@ -21,8 +21,6 @@
     "noLetterYet": "Il n'y a pas encore de lettre."
   },
   "editor": {
-    "newLetter": "Nouvelle lettre",
-    "writeIntro": "Écrivez une nouvelle lettre, pas plus de 500 mots.",
     "title": "Titre",
     "text": "Texte",
     "saveDraft": "Enregistrer en brouillon",

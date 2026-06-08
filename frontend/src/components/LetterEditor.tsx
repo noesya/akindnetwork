@@ -29,15 +29,6 @@ export default function LetterEditor({ respondsTo }: { respondsTo?: Letter['resp
       </aside>
 
       <div className="editor__main">
-        {isEmpty && (
-          <>
-            <h1 className="letter-view__title" style={{ color: 'var(--color-text-muted)' }}>
-              {t('editor.newLetter')}
-            </h1>
-            <p className="editor__hint">{t('editor.writeIntro')}</p>
-          </>
-        )}
-
         <div className="editor__label">{t('editor.title')}</div>
         <input
           className="editor__title-input"

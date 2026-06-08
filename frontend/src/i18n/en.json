@@ -21,8 +21,6 @@
     "noLetterYet": "No letter yet."
   },
   "editor": {
-    "newLetter": "New letter",
-    "writeIntro": "Write a new letter, no more than 500 words.",
     "title": "Title",
     "text": "Text",
     "saveDraft": "Save as draft",
