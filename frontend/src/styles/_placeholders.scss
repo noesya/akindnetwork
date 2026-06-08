@@ -1,0 +1,48 @@
+// Shared SCSS placeholders. Use `@extend %foo` to inherit.
+//
+// Unlike `@mixin`, placeholders emit nothing at compile time when unused,
+// and they group selectors in the output CSS rather than inlining rules —
+// so a pattern shared by six components produces one CSS block listing the
+// six selectors, instead of six near-identical blocks.
+
+// Centered, max-width-bounded page region. Default sits a page in the middle
+// of the viewport with breathing room top + bottom. Consumers can override
+// max-width (e.g. .me uses 720px) or the vertical rhythm.
+%page-container {
+  max-width: var(--max-page);
+  margin: var(--space-7) auto;
+  width: 100%;
+}
+
+// The reading layout shared by letter view and comment threads:
+//   author avatar (1fr) | serif body (2fr) | sidebar (1fr)
+// Items stick to top so the sticky sidebars work the same way in both.
+%three-col-reading {
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr;
+  gap: var(--space-7);
+  align-items: start;
+}
+
+// Small uppercase section header used wherever a category needs an "all caps"
+// micro-label. Margin is left to the consumer because section titles want
+// space below them while inline labels want none.
+%caps-label {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+}
+
+// Rounded pill shape — base for status badges, the mock-data marker, and
+// any future micro-tag. Tone (color, border, fill) is left to the consumer.
+%pill {
+  display: inline-block;
+  padding: 2px var(--space-2);
+  border-radius: 999px;
+  font-family: var(--font-sans);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  line-height: 1.4;
+}

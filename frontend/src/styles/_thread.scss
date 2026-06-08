@@ -1,9 +1,10 @@
 // Comment thread below a letter. Same 3-column grid as .letter-view.
 
+@use 'placeholders' as *;
+
 .thread {
-  max-width: var(--max-page);
-  margin: 0 auto;
-  width: 100%;
+  @extend %page-container;
+  margin: 0 auto;          // override: sits flush against the letter above
   padding: var(--space-7) 0;
 
   &__divider {
@@ -20,11 +21,8 @@
 }
 
 .comment {
-  display: grid;
-  grid-template-columns: 1fr 2fr 1fr;
-  gap: var(--space-7);
+  @extend %three-col-reading;
   padding: var(--space-5) 0;
-  align-items: start;
 
   &__author {
     display: flex;

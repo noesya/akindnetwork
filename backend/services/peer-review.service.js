@@ -1,6 +1,7 @@
 'use strict';
 
 const crypto = require('crypto');
+const { MoleculerError, MoleculerClientError } = require('moleculer').Errors;
 
 /**
  * KindPeerReviewService — gates the publication of a letter behind peer approval.
@@ -100,7 +101,7 @@ module.exports = {
           `submitDraft called: letterUri=${letterUri} caller=${callerWebId}`
         );
         if (!callerWebId || callerWebId === 'anon') {
-          throw new Error('Authentication required (no webId in ctx.meta)');
+          throw new MoleculerClientError('Authentication required', 401, 'UNAUTHORIZED');
         }
 
         // The caller is also the pod owner — we read/write their letter
@@ -112,23 +113,37 @@ module.exports = {
         );
 
         if (letter['kind:status'] !== 'draft') {
-          throw new Error(`Letter ${letterUri} is not in draft state (got "${letter['kind:status']}")`);
+          throw new MoleculerClientError(
+            `Letter is not in draft state (current: ${letter['kind:status'] || 'unknown'})`,
+            409,
+            'NOT_A_DRAFT'
+          );
         }
 
         // Refuse a re-submit of the exact same text after a prior rejection.
         const hash = this._hashContent(letter);
         if (letter['kind:rejectedContentHash'] === hash) {
-          throw new Error(
-            'Resubmission blocked: the letter has not been modified since it was rejected'
+          throw new MoleculerClientError(
+            'Resubmission blocked: the letter has not been modified since it was rejected. Edit the text and try again.',
+            409,
+            'UNCHANGED_AFTER_REJECTION'
           );
         }
 
         // Pool = everyone who's registered the app, minus the author.
         const pool = await this._getReviewerPool(ctx, callerWebId);
         if (pool.length < this.settings.reviewerCount) {
-          throw new Error(
+          // 503 Service Unavailable is the closest standard status for "the
+          // app is up but can't accept this submission right now because the
+          // network doesn't have enough peers yet". The message must include
+          // the actual numbers so the user knows whether to retry later.
+          throw new MoleculerError(
             `Not enough reviewers available (${pool.length}/${this.settings.reviewerCount}). ` +
-              `Need at least ${this.settings.reviewerCount} other registered users.`
+              `The network needs ${this.settings.reviewerCount} other registered users before a letter ` +
+              `can be submitted for review.`,
+            503,
+            'NOT_ENOUGH_REVIEWERS',
+            { available: pool.length, required: this.settings.reviewerCount }
           );
         }
         const reviewers = this._sample(pool, this.settings.reviewerCount);

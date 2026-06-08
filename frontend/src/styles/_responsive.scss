@@ -9,6 +9,13 @@
     gap: var(--space-5);
   }
 
+  // Drafts/in-review stack below the editor at the same breakpoint so the
+  // two regions keep behaving as one continuous workspace.
+  .write-lists__columns {
+    grid-template-columns: 1fr;
+    gap: var(--space-5);
+  }
+
   .letter-view__author,
   .letter-view__sidebar,
   .editor__meta {

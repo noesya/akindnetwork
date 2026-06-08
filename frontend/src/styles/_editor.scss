@@ -1,10 +1,10 @@
 // Letter composer. Same 3-column grid as .letter-view for visual continuity.
 // The textarea uses a repeating linear gradient to mimic lined paper.
 
+@use 'placeholders' as *;
+
 .editor {
-  max-width: var(--max-page);
-  margin: var(--space-7) auto;
-  width: 100%;
+  @extend %page-container;
   display: grid;
   grid-template-columns: 240px 1fr 280px;
   gap: var(--space-7);

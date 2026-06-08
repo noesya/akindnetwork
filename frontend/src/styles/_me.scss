@@ -1,9 +1,10 @@
-// Profile page. Holds drafts, published letters, peer reviews and language pref.
+// Profile page. Identity, account, published letters, language switch.
+
+@use 'placeholders' as *;
 
 .me {
-  max-width: 720px;
-  margin: var(--space-7) auto;
-  width: 100%;
+  @extend %page-container;
+  max-width: 720px;              // narrower than %page-container's default
   padding: 0 var(--space-5);
 
   &__header {
@@ -25,14 +26,9 @@
   }
 
   &__mock-badge {
-    display: inline-block;
+    @extend %pill;
     margin-top: var(--space-2);
-    padding: 2px var(--space-3);
     font-size: 11px;
-    font-family: var(--font-sans);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    border-radius: 999px;
     background: var(--color-surface);
     color: var(--color-text-muted);
   }
@@ -42,11 +38,7 @@
   }
 
   &__section-title {
-    font-family: var(--font-sans);
-    font-size: 13px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--color-text-muted);
+    @extend %caps-label;
     margin-bottom: var(--space-3);
   }
 
@@ -76,24 +68,13 @@
   }
 
   &__badge {
-    font-family: var(--font-sans);
+    @extend %pill;
     font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    padding: 2px var(--space-2);
-    border-radius: 999px;
     border: 1px solid currentColor;
-    line-height: 1.4;
 
-    &--draft {
-      color: var(--color-text-muted);
-    }
-    &--review {
-      color: var(--color-warn);
-    }
-    &--published {
-      color: var(--color-success);
-    }
+    &--draft     { color: var(--color-text-muted); }
+    &--review    { color: var(--color-warn); }
+    &--published { color: var(--color-success); }
   }
 
   &__lang-toggle {

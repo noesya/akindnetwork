@@ -1,9 +1,9 @@
 // Manifesto / About page. Hero, the 9 key-element cards, and the 3 pillars.
 
+@use 'placeholders' as *;
+
 .about {
-  max-width: var(--max-page);
-  margin: var(--space-7) auto;
-  width: 100%;
+  @extend %page-container;
 
   &__title {
     font-size: 56px;
@@ -72,14 +72,16 @@
     line-height: 1.5;
   }
 
-  &__pillars {
-      &__grid {
-        display: grid;
-        grid-template-columns: 1fr 2fr 1fr;
-        gap: var(--space-4);
-        margin: var(--space-8) auto;
-    }
+  // Single-name selectors for pillars block. The previous nesting wrote them
+  // as `&__pillars { &__grid { ... } }` which compiled to a redundant double-
+  // underscore selector with the wrapper class never carrying any rules.
+  &__pillars-grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
+    gap: var(--space-4);
+    margin: var(--space-8) auto;
   }
+
   &__pillar {
     background: var(--color-surface);
     border-radius: var(--radius-md);

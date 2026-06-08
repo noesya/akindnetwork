@@ -43,7 +43,7 @@ export default function AboutPage() {
 
       <section className="about__pillars">
         <h2 className="about__section-title">{t('about.pillarsTitle')}</h2>
-        <div className="about__pillars__grid">
+        <div className="about__pillars-grid">
           {pillars.map((key) => (
             <div className="about__pillar" key={key}>
               <div className="about__pillar-title">{t(`about.pillars.${key}.title`)}</div>

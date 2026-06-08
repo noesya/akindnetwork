@@ -1,14 +1,11 @@
 // Letter reading view: 3 columns on desktop (author | content | metadata).
 // The sidebar fields are a tiny helper used by both letter and thread.
 
+@use 'placeholders' as *;
+
 .letter-view {
-  display: grid;
-  grid-template-columns: 1fr 2fr 1fr;
-  gap: var(--space-7);
-  max-width: var(--max-page);
-  margin: var(--space-7) auto;
-  width: 100%;
-  align-items: start;
+  @extend %page-container;
+  @extend %three-col-reading;
 
   &__author {
     display: flex;

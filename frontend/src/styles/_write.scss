@@ -1,0 +1,33 @@
+// Drafts + in-review lists shown below the LetterEditor on /write.
+//
+// Outer width matches .editor so the two regions line up as a single
+// workspace; the 2-col grid collapses to a single column in _responsive.scss
+// at the same breakpoint the editor itself collapses.
+
+@use 'placeholders' as *;
+
+.write-lists {
+  @extend %page-container;
+  margin: var(--space-9) auto var(--space-7);   // override vertical rhythm
+
+  &__cta {
+    margin-bottom: var(--space-6);
+  }
+
+  &__columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-7);
+    align-items: start;
+  }
+
+  &__col {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__title {
+    @extend %caps-label;
+    margin-bottom: var(--space-3);
+  }
+}

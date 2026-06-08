@@ -1,9 +1,10 @@
 // Previous/next navigation row at the top of the Read page.
 
+@use 'placeholders' as *;
+
 .read-nav {
-  max-width: var(--max-page);
-  margin: 0 auto var(--space-7);
-  width: 100%;
+  @extend %page-container;
+  margin: 0 auto var(--space-7);      // override: no top space (sits at page top)
   display: flex;
   align-items: center;
   justify-content: center;
@@ -27,6 +28,7 @@
     font-family: var(--font-sans);
     text-align: center;
   }
+
   &__next {
     text-align: right;
   }
