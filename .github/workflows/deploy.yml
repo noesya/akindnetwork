@@ -3,7 +3,7 @@
 # Flow:
 #   1. Build the frontend (in frontend/) with production VITE_* env vars.
 #   2. Rsync frontend/dist/ → /var/www/kind/dist  (Caddy serves it directly).
-#   3. Rsync deploy/* + backend/ → /opt/kind  (compose stack source).
+#   3. Rsync backend/ + docker/ + docker-compose.yml → /opt/kind  (stack source).
 #   4. SSH to the VPS and `docker compose up -d --build --remove-orphans`.
 #
 # Required GitHub Actions configuration:
@@ -95,16 +95,18 @@ jobs:
             -e "ssh -i ~/.ssh/id_deploy -o StrictHostKeyChecking=accept-new" \
             dist/ vps:/var/www/kind/dist/
 
-      - name: Rsync backend + compose files
+      - name: Rsync backend + docker + compose files
         run: |
           rsync -avz --delete \
             --exclude node_modules --exclude '.env*' --exclude '*.log' \
             -e "ssh -i ~/.ssh/id_deploy" \
             backend/ vps:/opt/kind/backend/
-          rsync -avz \
-            --exclude '.env*' \
+          rsync -avz --delete \
             -e "ssh -i ~/.ssh/id_deploy" \
-            deploy/docker-compose.yml deploy/Caddyfile \
+            docker/ vps:/opt/kind/docker/
+          rsync -avz \
+            -e "ssh -i ~/.ssh/id_deploy" \
+            docker-compose.yml \
             vps:/opt/kind/
 
       - name: Compose up

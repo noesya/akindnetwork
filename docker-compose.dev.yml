@@ -1,10 +1,14 @@
 # Local dev stack for the Kind backend.
-# Run: npm run stack:up    (start Fuseki + Redis in the background)
-# Stop: npm run stack:down
+#
+# Spins up only the datastores (Fuseki + Redis). The Moleculer node runs on
+# the host via `cd backend && npm run dev` so hot-reload works.
+#
+# Run:  docker compose -f docker-compose.dev.yml up -d
+# Stop: docker compose -f docker-compose.dev.yml down
 
 services:
   fuseki:
-    # Same image as prod (deploy/docker-compose.yml) — includes jena-permissions
+    # Same image as prod (docker-compose.yml) — includes jena-permissions
     # required by @semapps/triplestore for WebACL secure datasets.
     image: semapps/jena-fuseki-webacl:v1.0.0
     container_name: kind-fuseki

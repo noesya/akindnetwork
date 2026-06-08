@@ -1,7 +1,7 @@
 # One-shot VPS bootstrap, run from GitHub Actions instead of an SSH terminal.
 #
 # Triggered manually (workflow_dispatch). Idempotent — safe to re-run anytime
-# you change `deploy/bootstrap.sh` and want to re-apply.
+# you change `docker/bootstrap.sh` and want to re-apply.
 #
 # Required GitHub configuration (same as deploy.yml):
 #   Secrets:
@@ -43,7 +43,7 @@ jobs:
           EOF
 
       - name: Copy bootstrap script
-        run: scp deploy/bootstrap.sh vps:/tmp/bootstrap.sh
+        run: scp docker/bootstrap.sh vps:/tmp/bootstrap.sh
 
       - name: Run bootstrap
         run: ssh vps 'sudo bash /tmp/bootstrap.sh && rm /tmp/bootstrap.sh'

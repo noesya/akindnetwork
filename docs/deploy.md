@@ -6,7 +6,7 @@ Production target: a single VPS Lite Medium at Infomaniak (Debian 13, Docker), h
 Caddy (TLS, reverse proxy)
   ├── /var/www/kind/dist                    → frontend SPA
   └── api.akindnetwork.org → moleculer:3000 → backend
-                                                ├── oxigraph (SPARQL store)
+                                                ├── fuseki (Jena SPARQL + WebACL)
                                                 └── redis (queues + rate-limit)
 ```
 
@@ -27,7 +27,7 @@ Test: `ssh kind 'whoami'` → should print `debian`.
 
 ### 2. Run the bootstrap via GitHub Actions
 
-Once the SSH secret/vars below are configured (step 3), trigger the `setup-vps` workflow from the Actions tab. It runs `deploy/bootstrap.sh` on the VPS without you opening an SSH terminal.
+Once the SSH secret/vars below are configured (step 3), trigger the `setup-vps` workflow from the Actions tab. It runs `docker/bootstrap.sh` on the VPS without you opening an SSH terminal.
 
 The bootstrap installs Docker, opens the firewall (22/80/443), hardens SSH (no root login, no password auth), and prepares `/opt/kind` + `/var/www/kind`. Idempotent — safe to re-run whenever you change the script.
 
@@ -67,7 +67,7 @@ TTL: 300 s while you're iterating, 3600 s once stable.
 
 ```bash
 ssh kind
-cp /tmp/.env.example /opt/kind/.env   # or paste deploy/.env.example contents
+cp /tmp/.env.example /opt/kind/.env   # or paste .env.example contents from the repo root
 nano /opt/kind/.env                   # tweak values
 exit
 ```
@@ -91,7 +91,7 @@ Just `git push origin main`. The workflow rebuilds the frontend, rsyncs everythi
 The script is idempotent, so re-running it on the VPS is safe whenever you change it:
 
 ```bash
-scp deploy/bootstrap.sh kind:/tmp/
+scp docker/bootstrap.sh kind:/tmp/
 ssh kind 'sudo bash /tmp/bootstrap.sh'
 ```
 
@@ -114,15 +114,15 @@ git revert <bad-commit>
 git push
 ```
 
-The deploy workflow ships the previous version. No data loss — Oxigraph + Redis volumes are persistent.
+The deploy workflow ships the previous version. No data loss — Fuseki + Redis + actor-keys volumes are persistent.
 
 ## Backups
 
-Persistent data lives in three Docker named volumes: `oxigraph-data`, `redis-data`, `caddy-data`. To back them up:
+Persistent data lives in four Docker named volumes: `fuseki-data`, `redis-data`, `caddy-data`, `actors-data`. To back them up:
 
 ```bash
 ssh kind
-sudo tar -C /var/lib/docker/volumes -czf /tmp/kind-volumes-$(date +%F).tgz oxigraph-data redis-data caddy-data
+sudo tar -C /var/lib/docker/volumes -czf /tmp/kind-volumes-$(date +%F).tgz fuseki-data redis-data caddy-data actors-data
 # then rsync to local: rsync kind:/tmp/kind-volumes-*.tgz ~/backups/
 ```
 

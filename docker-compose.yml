@@ -1,15 +1,15 @@
 # Kind — production stack.
 #
-# This file lives at /opt/kind/docker-compose.yml on the VPS. It is rsynced
-# from deploy/docker-compose.yml by the GitHub Actions deploy workflow.
+# Lives at the repo root. Deployed to /opt/kind/docker-compose.yml on the VPS
+# by the GitHub Actions deploy workflow.
 #
 # Services:
 #   caddy     — reverse proxy + TLS (Let's Encrypt). Serves /var/www/kind/dist
 #               for the frontend and proxies api.akindnetwork.org to moleculer.
-#   moleculer — the Kind backend (built from ../backend/). PeerReview,
+#   moleculer — the Kind backend (built from ./backend/). PeerReview,
 #               Circles, Sources, the rate-limit + time-window middlewares.
 #   fuseki    — Apache Jena Fuseki, the SPARQL endpoint. Same engine as the
-#               dev stack (backend/docker-compose.yml) for dev/prod parity.
+#               dev stack (docker-compose.dev.yml) for dev/prod parity.
 #   redis     — Moleculer queues + rate-limit counters.
 #
 # All long-lived data lives in named volumes so the host filesystem stays clean.
@@ -25,7 +25,7 @@ services:
       - "443:443"
       - "443:443/udp"   # HTTP/3
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
       - /var/www/kind/dist:/srv/dist:ro
       - caddy-data:/data
       - caddy-config:/config
@@ -35,6 +35,7 @@ services:
   moleculer:
     build:
       context: ./backend
+      dockerfile: ../docker/backend.Dockerfile
     restart: unless-stopped
     env_file:
       - .env

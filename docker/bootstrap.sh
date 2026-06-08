@@ -7,7 +7,7 @@
 # /opt/kind/.env which you write manually after the first run (see README).
 #
 # Usage (from your laptop):
-#   scp deploy/bootstrap.sh kind:/tmp/
+#   scp docker/bootstrap.sh kind:/tmp/
 #   ssh kind 'sudo bash /tmp/bootstrap.sh'
 #
 # What it does:
@@ -111,7 +111,7 @@ SSHD_DROPIN=/etc/ssh/sshd_config.d/99-kind.conf
 if [[ ! -f "$SSHD_DROPIN" ]]; then
   log "hardening SSH (no root login, no password auth)"
   cat > "$SSHD_DROPIN" <<'EOF'
-# Kind — hardening overrides. Managed by deploy/bootstrap.sh.
+# Kind — hardening overrides. Managed by docker/bootstrap.sh.
 PermitRootLogin no
 PasswordAuthentication no
 KbdInteractiveAuthentication no
@@ -138,7 +138,7 @@ Next steps (on your laptop):
        - Add VPS host as GH Actions variable    VPS_HOST  (IP or domain)
        - Add deploy user as GH Actions variable VPS_USER  (= ${DEPLOY_USER})
   2. Point DNS for akindnetwork.org and www.akindnetwork.org to this VPS.
-  3. Write /opt/kind/.env on the VPS (cf. deploy/.env.example).
+  3. Write /opt/kind/.env on the VPS (cf. .env.example at the repo root).
   4. git push origin main  → the deploy workflow does the rest.
 
 EOF

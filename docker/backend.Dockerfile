@@ -1,5 +1,7 @@
 # Backend Moleculer node — production image.
-# Build context is ../backend/ from deploy/docker-compose.yml.
+# Build context is ./backend/ (set in docker-compose.yml at the repo root);
+# this Dockerfile is referenced via `dockerfile: ../docker/backend.Dockerfile`,
+# so all COPY statements are relative to backend/, not docker/.
 
 FROM node:22-alpine AS deps
 WORKDIR /app

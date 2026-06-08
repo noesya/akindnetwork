@@ -7,9 +7,9 @@
   "scripts": {
     "dev": "moleculer-runner --env --hot --repl services/**/*.service.js",
     "start": "moleculer-runner --env services/**/*.service.js",
-    "stack:up": "docker compose up -d",
-    "stack:down": "docker compose down",
-    "stack:logs": "docker compose logs -f"
+    "stack:up": "docker compose -f ../docker-compose.dev.yml up -d",
+    "stack:down": "docker compose -f ../docker-compose.dev.yml down",
+    "stack:logs": "docker compose -f ../docker-compose.dev.yml logs -f"
   },
   "dependencies": {
     "@activitypods/app": "2.2.0",

@@ -4,11 +4,13 @@ Monorepo : frontend Vite/React, backend Moleculer/ActivityPods, déploiement Doc
 
 ```
 .
-├── frontend/      Vite + React 18 + TS + SemApps providers
-├── backend/       Moleculer + @activitypods/app
-├── deploy/        docker-compose + Caddyfile + bootstrap VPS
-├── docs/          ARCHITECTURE.md, Figma PDF, etc.
-└── .github/       workflows ci.yml + deploy.yml + setup-vps.yml
+├── frontend/             Vite + React 18 + TS + SemApps providers
+├── backend/              Moleculer + @activitypods/app
+├── docker/               Caddyfile + backend.Dockerfile + bootstrap.sh
+├── docker-compose.yml    stack prod (caddy + moleculer + fuseki + redis)
+├── docker-compose.dev.yml stack dev (fuseki + redis seuls)
+├── docs/                 ARCHITECTURE.md, deploy.md, Figma PDF, etc.
+└── .github/              workflows ci.yml + deploy.yml + setup-vps.yml
 ```
 
 ## Run frontend (dev)
@@ -24,10 +26,10 @@ npm run dev
 ## Run backend (dev)
 
 ```bash
+docker compose -f docker-compose.dev.yml up -d   # Fuseki + Redis (loopback)
 cd backend
 npm install
-npm run stack:up    # Fuseki + Redis via docker-compose
-npm run dev         # Moleculer hot-reload
+npm run dev                                       # Moleculer hot-reload
 ```
 
 Voir [`backend/README.md`](./backend/README.md) pour les détails (env vars, tunnel ngrok, etc.).
@@ -67,10 +69,10 @@ Cible : VPS Infomaniak Debian 13, stack Docker complète (Caddy + Moleculer + Fu
 | Workflow | Déclencheur | Effet |
 |---|---|---|
 | `ci.yml` | PR / push | typecheck + build frontend |
-| `setup-vps.yml` | manuel | exécute `deploy/bootstrap.sh` sur le VPS (install Docker, ufw, hardening SSH) |
+| `setup-vps.yml` | manuel | exécute `docker/bootstrap.sh` sur le VPS (install Docker, ufw, hardening SSH) |
 | `deploy.yml` | push main | build frontend → rsync dist + backend + compose → `docker compose up -d --build` |
 
-Procédure complète dans [`deploy/README.md`](./deploy/README.md).
+Procédure complète dans [`docs/deploy.md`](./docs/deploy.md).
 
 ## Architecture
 
