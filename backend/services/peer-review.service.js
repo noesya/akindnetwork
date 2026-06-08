@@ -96,14 +96,20 @@ module.exports = {
       async handler(ctx) {
         const { letterUri } = ctx.params;
         const callerWebId = ctx.meta.webId;
+        this.logger.info(
+          `submitDraft called: letterUri=${letterUri} caller=${callerWebId}`
+        );
         if (!callerWebId || callerWebId === 'anon') {
-          throw new Error('Authentication required');
+          throw new Error('Authentication required (no webId in ctx.meta)');
         }
 
         // The caller is also the pod owner — we read/write their letter
         // using their AccessGrant via the FetchPodOrProxy mixin. WAC on the
         // remote pod ensures we can only touch resources the user owns.
         const letter = await this._fetchLetter(ctx, letterUri, callerWebId);
+        this.logger.info(
+          `Letter fetched: status=${letter?.['kind:status']} hasContent=${Boolean(letter?.content)}`
+        );
 
         if (letter['kind:status'] !== 'draft') {
           throw new Error(`Letter ${letterUri} is not in draft state (got "${letter['kind:status']}")`);
@@ -154,14 +160,41 @@ module.exports = {
      * dance. `actorUri` is the Pod owner (same as the caller for our flow).
      * pod-resources.get returns { ok, status, body } — body is the parsed
      * JSON-LD when ok=true.
+     *
+     * Wraps every failure mode (call throws, returns undefined, returns
+     * !ok) in a Moleculer-friendly error with enough context that we can
+     * tell apart "our backend bug", "remote pod returned X", and "service
+     * missing".
      */
     async _fetchLetter(ctx, letterUri, actorUri) {
-      const { ok, status, body } = await ctx.call('pod-resources.get', {
-        resourceUri: letterUri,
-        actorUri
-      });
+      let result;
+      try {
+        result = await ctx.call('pod-resources.get', { resourceUri: letterUri, actorUri });
+      } catch (e) {
+        this.logger.error(
+          `pod-resources.get threw for ${letterUri} (actor=${actorUri}): ${e?.name}: ${e?.message}`,
+          e
+        );
+        throw new Error(
+          `pod-resources.get threw: ${e?.message || e}. Letter=${letterUri}, actor=${actorUri}`
+        );
+      }
+      if (!result) {
+        this.logger.error(
+          `pod-resources.get returned ${result} for ${letterUri} (actor=${actorUri})`
+        );
+        throw new Error(
+          `pod-resources.get returned no response for ${letterUri}`
+        );
+      }
+      const { ok, status, statusText, body } = result;
       if (!ok) {
-        throw new Error(`Could not fetch letter ${letterUri}: HTTP ${status}`);
+        this.logger.warn(
+          `pod-resources.get not ok for ${letterUri}: status=${status} statusText=${statusText}`
+        );
+        throw new Error(
+          `Pod returned HTTP ${status}${statusText ? ' ' + statusText : ''} when fetching ${letterUri}`
+        );
       }
       return body;
     },
@@ -175,12 +208,24 @@ module.exports = {
      */
     async _patchLetter(ctx, letterUri, current, patch, actorUri) {
       const merged = { ...current, ...patch, id: letterUri };
-      const { ok, status } = await ctx.call('pod-resources.put', {
-        resource: merged,
-        actorUri
-      });
+      let result;
+      try {
+        result = await ctx.call('pod-resources.put', { resource: merged, actorUri });
+      } catch (e) {
+        this.logger.error(
+          `pod-resources.put threw for ${letterUri} (actor=${actorUri}): ${e?.name}: ${e?.message}`,
+          e
+        );
+        throw new Error(`pod-resources.put threw: ${e?.message || e}`);
+      }
+      const { ok, status, statusText } = result || {};
       if (!ok) {
-        throw new Error(`Could not update letter ${letterUri}: HTTP ${status}`);
+        this.logger.warn(
+          `pod-resources.put not ok for ${letterUri}: status=${status} statusText=${statusText}`
+        );
+        throw new Error(
+          `Pod returned HTTP ${status}${statusText ? ' ' + statusText : ''} when updating ${letterUri}`
+        );
       }
       return merged;
     },
