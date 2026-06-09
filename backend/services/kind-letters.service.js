@@ -48,12 +48,21 @@ module.exports = {
           // order, and `/:id` would otherwise swallow `/feed`. The two-segment
           // alias (`/:id/children`) comes before the single-segment one for
           // the same reason.
+          // The `:id` parameter is constrained to UUIDv4 shape
+          // (8-4-4-4-12 hex with dashes = 36 chars). Without that
+          // constraint, `GET /letters/feed` matches `/:id` with
+          // id="feed" because @semapps/core overrides moleculer-web's
+          // route optimiser with a single-arg comparator that doesn't
+          // preserve declaration order between aliases. Anchoring `:id`
+          // to a UUID pattern makes the matcher reject `feed`,
+          // `by-author/...`, etc. — they fall through to their literal
+          // aliases above.
           aliases: {
             'GET /feed': 'kind-letters.feed',
             'POST /_rehydrate': 'kind-letters.rehydrate',
             'GET /by-author/:username': 'kind-letters.byAuthor',
-            'GET /:id/children': 'kind-letters.children',
-            'GET /:id': 'kind-letters.byId'
+            'GET /:id([a-fA-F0-9-]{36})/children': 'kind-letters.children',
+            'GET /:id([a-fA-F0-9-]{36})': 'kind-letters.byId'
           }
         },
         // Same trick as kind-peer-review — beat @semapps/ldp's catch-all
@@ -65,11 +74,11 @@ module.exports = {
 
     // The index is in-memory, so a backend restart loses every letter that
     // was indexed during the previous run. Trigger a rehydrate on boot to
-    // re-discover all letters from every known user's pod via the SAI
-    // grants chain. We fire-and-forget (no `await`) so a slow scan doesn't
-    // block service startup; the index simply fills up progressively.
+    // re-discover all letters from every known user's pod via the
+    // cached DataGrants. Fire-and-forget so a slow scan doesn't block
+    // service startup; the index fills up progressively.
     this.broker
-      .waitForServices(['app-registrations', 'pod-resources'])
+      .waitForServices(['data-grants', 'pod-resources'])
       .then(() => this.broker.call('kind-letters.rehydrate'))
       .catch((e) => this.logger.warn(`auto-rehydrate skipped: ${e?.message || e}`));
   },
@@ -215,80 +224,122 @@ module.exports = {
     },
 
     /**
-     * Rebuild the index from scratch by scanning every registered user's
-     * Letters container. Necessary after a backend restart because the
-     * in-memory index doesn't persist. Triggered automatically on boot
-     * and also exposed at `POST /letters/_rehydrate` for manual recovery.
+     * Rebuild the index from scratch by scanning every cached DataGrant.
+     * Necessary after a backend restart because the in-memory index
+     * doesn't persist. Triggered automatically on boot and also exposed at
+     * `POST /letters/_rehydrate` for manual recovery.
      *
-     * For each user we walk the SAI chain:
-     *   AppRegistration → AccessGrants → DataGrants
-     * filter the DataGrants whose `interop:registeredShapeTree` is our
-     * as:Note shape, then GET each `interop:hasDataRegistration` URI as
-     * a container and index every letter it `ldp:contains`.
+     * Strategy: `data-grants.list` returns every DataGrant our app has
+     * been issued by any user. Each DataGrant points at a container in
+     * the user's pod that holds resources of a given shape tree. Filter
+     * to as:Note grants, GET each container via the dataOwner's pod, and
+     * index every letter `ldp:contains` returns.
+     *
+     * Verbose logging at each step so a failed scan is easy to diagnose
+     * from `docker compose logs`.
      */
     rehydrate: {
       visibility: 'public',
       async handler(ctx) {
-        const pods = (await ctx.call('app-registrations.getRegisteredPods')) || [];
-        this.logger.info(`kind-letters.rehydrate: scanning ${pods.length} pods`);
-        let indexed = 0;
+        this.logger.info('kind-letters.rehydrate: starting');
         const NOTE_SHAPE = 'https://shapes.activitypods.org/shapetrees/as/Note';
 
-        for (const webId of pods) {
+        let dgContainer;
+        try {
+          dgContainer = await ctx.call('data-grants.list', { webId: 'system' });
+        } catch (e) {
+          this.logger.warn(
+            `kind-letters.rehydrate: data-grants.list failed — ${e?.message || e}`
+          );
+          return { error: 'list-failed', message: String(e?.message || e) };
+        }
+
+        const dataGrants = this._asArray(dgContainer?.['ldp:contains']);
+        this.logger.info(
+          `kind-letters.rehydrate: ${dataGrants.length} data grants in cache`
+        );
+
+        let scanned = 0;
+        let indexed = 0;
+
+        for (const dg of dataGrants) {
+          scanned++;
+          const dgId = dg?.id || dg?.['@id'] || '(no id)';
+          const shape = dg?.['interop:registeredShapeTree'];
+
+          if (shape !== NOTE_SHAPE) {
+            this.logger.info(
+              `kind-letters.rehydrate: skip DG ${dgId} — shape=${shape}`
+            );
+            continue;
+          }
+
+          // The DataGrant's `dataOwner` is the user whose pod we read; the
+          // `hasDataRegistration` is the container URI inside that pod.
+          // `dataOwner` may be a string or {@id: '...'} depending on
+          // serialisation.
+          const ownerRaw = dg['interop:dataOwner'];
+          const owner =
+            typeof ownerRaw === 'string' ? ownerRaw : ownerRaw?.['@id'] || ownerRaw?.id;
+          const containerRaw = dg['interop:hasDataRegistration'];
+          const containerUri =
+            typeof containerRaw === 'string'
+              ? containerRaw
+              : containerRaw?.['@id'] || containerRaw?.id;
+
+          if (!owner || !containerUri) {
+            this.logger.warn(
+              `kind-letters.rehydrate: DG ${dgId} missing owner or container ` +
+                `(owner=${owner}, container=${containerUri})`
+            );
+            continue;
+          }
+
+          this.logger.info(
+            `kind-letters.rehydrate: reading ${containerUri} as ${owner}`
+          );
+
+          let containerRes;
           try {
-            const appReg = await ctx.call('app-registrations.getForActor', {
-              actorUri: webId
+            containerRes = await ctx.call('pod-resources.get', {
+              resourceUri: containerUri,
+              actorUri: owner
             });
-            const accessGrants = this._asArray(appReg?.['interop:hasAccessGrant']);
-            for (const agUri of accessGrants) {
-              const ag = await ctx
-                .call('access-grants.get', {
-                  resourceUri: agUri,
-                  webId: 'system'
-                })
-                .catch(() => null);
-              if (!ag) continue;
-              const dataGrants = this._asArray(ag['interop:hasDataGrant']);
-              for (const dgUri of dataGrants) {
-                const dg = await ctx
-                  .call('data-grants.get', {
-                    resourceUri: dgUri,
-                    webId: 'system'
-                  })
-                  .catch(() => null);
-                if (!dg) continue;
-                if (dg['interop:registeredShapeTree'] !== NOTE_SHAPE) continue;
-                const containerUri = dg['interop:hasDataRegistration'];
-                if (!containerUri) continue;
-                const containerRes = await ctx
-                  .call('pod-resources.get', {
-                    resourceUri: containerUri,
-                    actorUri: webId
-                  })
-                  .catch(() => null);
-                if (!containerRes?.ok || !containerRes.body) continue;
-                const letters = this._asArray(containerRes.body['ldp:contains']);
-                for (const lEntry of letters) {
-                  const letterUri =
-                    typeof lEntry === 'string'
-                      ? lEntry
-                      : lEntry?.id || lEntry?.['@id'];
-                  if (!letterUri) continue;
-                  await this._refreshEntry(ctx, letterUri, webId);
-                  indexed++;
-                }
-              }
-            }
           } catch (e) {
             this.logger.warn(
-              `kind-letters.rehydrate: pod ${webId} failed — ${e?.message || e}`
+              `kind-letters.rehydrate: container fetch threw — ${e?.message || e}`
             );
+            continue;
+          }
+          if (!containerRes?.ok) {
+            this.logger.warn(
+              `kind-letters.rehydrate: container ${containerUri} returned status=${containerRes?.status}`
+            );
+            continue;
+          }
+
+          const items = this._asArray(containerRes.body?.['ldp:contains']);
+          this.logger.info(
+            `kind-letters.rehydrate: container has ${items.length} item(s)`
+          );
+
+          for (const item of items) {
+            const letterUri =
+              typeof item === 'string' ? item : item?.id || item?.['@id'];
+            if (!letterUri) continue;
+            await this._refreshEntry(ctx, letterUri, owner);
+            indexed++;
           }
         }
+
         this.logger.info(
-          `kind-letters.rehydrate: done, indexed ${indexed} resource(s), ${this._index.size} live entries`
+          `kind-letters.rehydrate: done — scanned ${scanned} DG, indexed ${indexed} item(s), ${this._index.size} live entries`
         );
-        return { scanned: pods.length, indexed, liveEntries: this._index.size };
+        return {
+          scanned,
+          indexed,
+          liveEntries: this._index.size
+        };
       }
     }
   },
