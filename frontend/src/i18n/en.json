@@ -14,13 +14,12 @@
     "approvedBy": "Approved by",
     "sources": "Sources?",
     "status": "Status",
-    "respondPublicly": "Respond publicly",
-    "writeToAuthor": "Write to {{name}}",
     "byAuthor": "by {{name}}",
     "contribute": "Contribute",
     "noLetterYet": "No letter yet.",
     "responses_one": "{{count}} response",
-    "responses_other": "{{count}} responses"
+    "responses_other": "{{count}} responses",
+    "respond": "Respond to this message"
   },
   "write": {
     "workspaceTitle": "Write",
@@ -40,6 +39,7 @@
     "sentForReview": "Letter sent for peer review.",
     "saveFailed": "Could not save the letter.",
     "submitFailed": "Could not submit the letter for review.",
+    "statusRejected": "Rejected",
     "wordsLeft": "{{count}} words left"
   },
   "review": {
@@ -135,6 +135,11 @@
   },
   "language": {
     "switch": "FR"
+  },
+  "demo": {
+    "banner": "Example data — you're exploring the prototype.",
+    "connect": "Connect my Pod",
+    "disabledHint": "Connect your Pod to save."
   },
   "source": {
     "open": "Open source"

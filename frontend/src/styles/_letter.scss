@@ -7,10 +7,26 @@
   @extend %page-container;
   @extend %three-col-reading;
 
+  // Two modes for the author column:
+  //
+  //   Default ("big") — used by the root letter at the top of the page:
+  //     avatar large, name in serif 24px stacked BELOW, bio below that.
+  //     Photo dominates, name is the secondary identifier.
+  //
+  //   Compact — triggered by `&--author-compact` (set when the reader has
+  //     scrolled past ~40% of the viewport) and by the `&--reply` variant:
+  //     avatar small + name in sans 14px right NEXT to it, no bio.
+  //     The transition is the "scroll-to-compact" the mockup calls for.
+  //
+  // The mode swap is driven by class names on the article, not media
+  // queries — so it works regardless of viewport, and replies always
+  // render compact.
+
   &__author {
     display: flex;
     flex-direction: column;
-    gap: var(--space-4);
+    align-items: flex-start;
+    gap: var(--space-3);
     position: sticky;
     top: var(--space-5);
   }
@@ -18,13 +34,34 @@
   &__author-name {
     font-family: var(--font-serif);
     font-size: 24px;
-    margin-top: var(--space-3);
+    line-height: 1.2;
   }
 
   &__author-bio {
     font-size: 13px;
     line-height: 1.5;
     color: var(--color-text-muted);
+  }
+
+  // Compact author layout — shared by scrolled-root and replies.
+  &--author-compact &__author,
+  &--reply &__author {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: var(--space-3);
+    row-gap: 0;
+    align-items: center;
+  }
+
+  &--author-compact &__author-name,
+  &--reply &__author-name {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.3;
+  }
+
+  &--author-compact &__author-bio {
+    display: none;
   }
 
   &__content {
@@ -41,7 +78,11 @@
   &__body p {
     font-size: 24px;
     line-height: 1.6;
-    margin-bottom: var(--space-5);
+    // Browsers give <p> a default top margin (`1em`). With no title above
+    // it (reply variant), that default pushes the body down by ~24px and
+    // misaligns the column with the avatar's top edge. Zeroing it lets us
+    // pace the rhythm with margin-bottom only.
+    margin: 0 0 var(--space-5);
   }
 
   &__sidebar {
@@ -75,50 +116,32 @@
     margin-right: var(--space-4);
   }
 
+  // Discreet link counting a reply's own children, shown next to the
+  // "Répondre" button when the reply has its own thread. Visually a
+  // muted underline so it doesn't compete with the actual CTA button.
+  &__replies-link {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    color: var(--color-text-muted);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
   &__respond-header {
     margin-bottom: var(--space-6);
     font-size: 14px;
     color: var(--color-text-muted);
   }
 
-  &__children {
-    margin-top: var(--space-8);
-    border-top: 1px solid var(--color-line);
-    padding-top: var(--space-6);
-  }
-
-  &__children-title {
-    font-family: var(--font-sans);
-    font-size: 13px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--color-text-muted);
-    margin-bottom: var(--space-4);
-  }
-
-  &__child {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    padding: var(--space-3) 0;
-    border-bottom: 1px solid var(--color-line);
-    text-decoration: none;
-    color: var(--color-text);
-    font-family: var(--font-serif);
-
-    &:hover {
-      background: var(--color-surface-soft);
+  // Reply variant — same 3-col layout as the root letter but visually
+  // dampened (smaller body, compact author from the rules above, no title,
+  // no "À propos?" sidebar field). The reading eye treats the root as
+  // primary and the replies as continuation. Separators between siblings
+  // are added by the `.letter-view + .letter-view` rule in __replies.
+  &--reply {
+    .letter-view__body p {
+      font-size: 20px;
     }
-  }
-
-  &__child-title {
-    font-size: 18px;
-  }
-
-  &__child-meta {
-    font-family: var(--font-sans);
-    font-size: 12px;
-    color: var(--color-text-muted);
   }
 
   &__map {
@@ -127,6 +150,45 @@
     height: auto;
     border-radius: var(--radius-md);
   }
+}
+
+// Replies section header + the bottom Contribuer button. Both live OUTSIDE
+// .letter-view because they belong to the read flow as a whole, not to any
+// single letter.
+.letter-view__replies {
+  @extend %page-container;
+  margin-top: var(--space-8);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--color-line);
+
+  // Thin separator between successive replies — the section's own
+  // border-top covers the gap between the root letter and the first
+  // reply, so we only need to draw between siblings, not above the
+  // first one.
+  .letter-view + .letter-view {
+    margin-top: var(--space-7);
+    padding-top: var(--space-7);
+    border-top: 1px solid var(--color-line);
+  }
+}
+
+.letter-view__replies-title {
+  @extend %caps-label;
+  text-align: center;
+  margin-bottom: var(--space-5);
+}
+
+// Bottom CTA. The border-top spans the full width of the layout's main
+// content area — i.e. it reaches the layout's horizontal padding edges,
+// wider than the centered page-container of the letter above. Same
+// margins as the rest of the layout, no escaping. The button itself
+// stays centered.
+.letter-view__contribute {
+  @extend %page-container;
+  padding-top: var(--space-7);
+  border-top: 1px solid var(--color-line);
+  display: flex;
+  justify-content: center;
 }
 
 .sidebar-field {

@@ -127,14 +127,35 @@ export function useLetters(): { letters: Letter[]; isLoading: boolean } {
     return assigned.includes(user.webId) && !approved.includes(user.webId) && !rejected.includes(user.webId);
   };
 
+  // Topological filter: a letter appears in the main /read flow only if
+  //   - it has no parent (root letter, opens a new thread), OR
+  //   - it has at least one published reply (it carries a sub-thread)
+  // Leaf replies are reachable only by drilling into their parent's
+  // "Replies" section — they don't clutter the main navigation. This is
+  // the "commentaire de commentaire" rule.
+  const visibleInFlux = (collection: LetterWithReview[]) => {
+    const childCount = new Map<string, number>();
+    for (const l of collection) {
+      const parentId = l.respondsTo?.id || l.inReplyToUri;
+      if (parentId) childCount.set(parentId, (childCount.get(parentId) ?? 0) + 1);
+    }
+    return collection.filter((l) => {
+      const hasParent = !!l.respondsTo || !!l.inReplyToUri;
+      if (!hasParent) return true;
+      return (childCount.get(l.id) ?? 0) > 0;
+    });
+  };
+
   if (!shouldFetch) {
     return {
-      letters: mockLetters.filter((l) => l.status === 'published'),
+      letters: visibleInFlux(
+        mockLetters.filter((l) => l.status === 'published') as LetterWithReview[]
+      ),
       isLoading: false
     };
   }
   const adapted = (data ?? []).map((p) => podLetterToLetter(p, user));
-  return { letters: adapted.filter(visibleToMe), isLoading };
+  return { letters: visibleInFlux(adapted.filter(visibleToMe)), isLoading };
 }
 
 export function useLetter(slugOrId: string | undefined): {

@@ -2,7 +2,9 @@ import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
 import { useGetList } from 'ra-core';
+import DemoBanner from '../components/DemoBanner';
 import LetterEditor from '../components/LetterEditor';
+import { letters as mockLetters } from '../data/mock';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { toSlug } from '../lib/letterSlug';
 
@@ -28,6 +30,7 @@ type PodLetter = {
  */
 export default function WritePage() {
   const { draftId } = useParams();
+  const { user } = useCurrentUser();
   // Historical: /write/new used to mean "blank editor" when the workspace was
   // a separate page. We keep the alias working so bookmarked URLs don't break.
   const effectiveId = draftId === 'new' ? undefined : draftId;
@@ -44,20 +47,25 @@ export default function WritePage() {
 
   return (
     <>
+      {user.isMock && <DemoBanner />}
       {/* `key` forces a fresh LetterEditor on every draftId change. Without
         it the editor keeps the previous draft's title/body in local state
         and the `hydrated` guard prevents re-hydration when the user clicks
         a different draft in the list below. Remounting is the simplest
-        correct reset. */}
-      <LetterEditor key={effectiveId || 'new'} draftId={effectiveId} />
-      <DraftsAndReview hasOpenDraft={Boolean(effectiveId)} />
+        correct reset.
+        Drafts + in-review lists are passed as children so they render
+        INSIDE the editor's center column (right under the text), sharing
+        its width and indent. */}
+      <LetterEditor key={effectiveId || 'new'} draftId={effectiveId}>
+        <DraftsAndReview hasOpenDraft={Boolean(effectiveId)} />
+      </LetterEditor>
     </>
   );
 }
 
 function DraftsAndReview({ hasOpenDraft }: { hasOpenDraft: boolean }) {
   const { t, i18n } = useTranslation();
-  const { isAuthenticated } = useCurrentUser();
+  const { user, isAuthenticated } = useCurrentUser();
 
   const { data } = useGetList<PodLetter>(
     'Letter',
@@ -67,11 +75,29 @@ function DraftsAndReview({ hasOpenDraft }: { hasOpenDraft: boolean }) {
     },
     { enabled: isAuthenticated }
   );
-  const podLetters = data ?? [];
-  const drafts = podLetters.filter((l) => l['kind:status'] === 'draft');
-  const inReview = podLetters.filter((l) => l['kind:status'] === 'pending-review');
 
-  if (!isAuthenticated) return null;
+  // Pull from the Pod when authenticated, otherwise from the mock data —
+  // the demo experience needs example drafts + in-review entries so
+  // visitors can see what the workspace looks like before connecting a Pod.
+  let drafts: PodLetter[];
+  let inReview: PodLetter[];
+  if (isAuthenticated) {
+    const podLetters = data ?? [];
+    drafts = podLetters.filter((l) => l['kind:status'] === 'draft');
+    inReview = podLetters.filter((l) => l['kind:status'] === 'pending-review');
+  } else {
+    const mine = mockLetters.filter((l) => l.authorId === user.id);
+    const toPodShape = (l: typeof mockLetters[number]): PodLetter => ({
+      id: l.id,
+      name: l.title,
+      'kind:status': l.status === 'in-review' ? 'pending-review' : (l.status as any),
+      'dc:created': l.createdAt,
+      'dc:modified': l.publishedAt
+    });
+    drafts = mine.filter((l) => l.status === 'draft').map(toPodShape);
+    inReview = mine.filter((l) => l.status === 'in-review').map(toPodShape);
+  }
+
   if (drafts.length === 0 && inReview.length === 0 && !hasOpenDraft) return null;
 
   return (

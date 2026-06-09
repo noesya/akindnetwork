@@ -1,12 +1,15 @@
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
+import DemoBanner from '../components/DemoBanner';
 import LetterView from '../components/LetterView';
 import Thread from '../components/Thread';
+import { useCurrentUser } from '../hooks/useCurrentUser';
 import { useLetters, useComments } from '../hooks/useLetters';
 import { toSlug } from '../lib/letterSlug';
 
 export default function ReadPage() {
   const { t, i18n } = useTranslation();
+  const { user } = useCurrentUser();
   const { letters, isLoading } = useLetters();
   const letter = letters[0];
   const { comments: letterComments } = useComments(letter?.id);
@@ -24,6 +27,7 @@ export default function ReadPage() {
 
   return (
     <>
+      {user.isMock && <DemoBanner />}
       <ReadNav current={1} total={letters.length} prevId={null} nextId={letters[1] ? toSlug(letters[1].id) : null} />
       <LetterView letter={letter} />
       <Thread comments={letterComments} />

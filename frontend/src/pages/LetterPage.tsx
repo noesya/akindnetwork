@@ -1,11 +1,14 @@
 import { Link, useParams } from 'react-router-dom';
+import DemoBanner from '../components/DemoBanner';
 import LetterView from '../components/LetterView';
 import Thread from '../components/Thread';
+import { useCurrentUser } from '../hooks/useCurrentUser';
 import { useLetters, useLetter, useComments } from '../hooks/useLetters';
 import { toSlug } from '../lib/letterSlug';
 
 export default function LetterPage() {
   const { id } = useParams();
+  const { user } = useCurrentUser();
   const { letters } = useLetters();
   const { letter, isLoading } = useLetter(id);
   const { comments: letterComments } = useComments(letter?.id);
@@ -29,6 +32,7 @@ export default function LetterPage() {
 
   return (
     <>
+      {user.isMock && <DemoBanner />}
       <nav className="read-nav">
         <span className="read-nav__previous">
           {prevSlug && (

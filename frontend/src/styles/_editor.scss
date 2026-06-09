@@ -6,9 +6,15 @@
 .editor {
   @extend %page-container;
   display: grid;
+  // 3 columns matching LetterView's reading layout, all three starting
+  // at the same top edge:  qui (240px) | quoi (1fr) | meta (280px)
   grid-template-columns: 240px 1fr 280px;
   gap: var(--space-7);
   align-items: start;
+
+  &__main {
+    font-family: var(--font-serif);
+  }
 
   &__meta {
     display: flex;
@@ -17,8 +23,25 @@
     font-size: 13px;
   }
 
-  &__main {
+  // Left column = "qui je suis". Same "big" mode as LetterView's author at
+  // the top of the page: avatar dominates, name in serif 24px stacked
+  // below, bio underneath. No scroll-compact in the editor — the writer
+  // looks at their own identity once and gets on with it.
+  &__meta--left {
+    align-items: flex-start;
+    gap: var(--space-3);
+  }
+
+  &__author-name {
     font-family: var(--font-serif);
+    font-size: 24px;
+    line-height: 1.2;
+  }
+
+  &__author-bio {
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--color-text-muted);
   }
 
   &__title-input,

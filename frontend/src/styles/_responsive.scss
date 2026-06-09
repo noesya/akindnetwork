@@ -9,15 +9,11 @@
     gap: var(--space-5);
   }
 
-  // Drafts/in-review stack below the editor at the same breakpoint so the
-  // two regions keep behaving as one continuous workspace. The desktop
-  // padding that aligned the lists with the editor's center column is also
-  // dropped — at mobile widths the editor itself spans full width, so its
-  // "center column" is the whole width too.
-  .write-lists {
-    padding-left: 0;
-    padding-right: 0;
-  }
+  // The editor's 3 cols stack naturally with grid-template-columns: 1fr
+  // (set by the rule above) — no grid-template-areas needed.
+
+  // Drafts/in-review stack on mobile (since the lists live inside the
+  // editor's center column, they collapse with the rest of the editor).
   .write-lists__columns {
     grid-template-columns: 1fr;
     gap: var(--space-5);

@@ -1,22 +1,12 @@
-// Drafts + in-review lists shown below the LetterEditor on /write.
-//
-// Outer width matches .editor so the two regions line up as a single
-// workspace; the 2-col grid collapses to a single column in _responsive.scss
-// at the same breakpoint the editor itself collapses.
+// Drafts + in-review lists shown inside the LetterEditor's center column,
+// right under the body text + actions row. They share the column's full
+// width — no extra padding or max-width — so they line up visually with
+// the text area above.
 
 @use 'placeholders' as *;
 
 .write-lists {
-  @extend %page-container;
-  margin: var(--space-9) auto var(--space-7);
-
-  // Inset the lists by the editor's left + right sidebar widths so the
-  // drafts/in-review columns align horizontally with the textarea above
-  // them. The numbers track .editor's grid: 240px meta + space-7 gap on
-  // the left, 280px sidebar + space-7 gap on the right. _responsive.scss
-  // wipes both at the editor's collapse breakpoint.
-  padding-left: calc(240px + var(--space-7));
-  padding-right: calc(280px + var(--space-7));
+  margin-top: var(--space-8);
 
   &__cta {
     margin-bottom: var(--space-6);

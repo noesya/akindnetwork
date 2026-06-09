@@ -51,7 +51,7 @@ export const users: Record<string, User> = {
     id: 'alice',
     webId: 'https://alice.armoise.co/profile/card#me',
     name: 'Alice (vous)',
-    bio: 'Curieuse de tout. Apprend ActivityPods.',
+    bio: 'Curieuse de tout. Aime les flamants roses et les lapins blancs.',
     avatarInitials: 'A',
     avatarColor: '#c9e265'
   },
@@ -67,8 +67,8 @@ export const users: Record<string, User> = {
   nicolas: {
     id: 'nicolas',
     webId: 'https://nicolas.armoise.co/profile/card#me',
-    name: 'Nicolas Bariès',
-    bio: 'Écrit sur la mobilité douce et les communs européens.',
+    name: 'Nicolas Pariès',
+    bio: 'I do less, but better. Creative partner for purpose-led organisations. Direction, Identities & Code, going low',
     avatarInitials: 'NB',
     avatarColor: '#f7a072'
   },
@@ -99,14 +99,14 @@ export const users: Record<string, User> = {
 };
 
 export const letters: Letter[] = [
+  // The seed letter shown on /read by default in demo mode. The two replies
+  // below thread off it so visitors can see how the "responses" UI works.
   {
-    id: 'vision-train-network',
-    authorId: 'philippe',
-    title: 'Now, here is a vision that I would love to make a reality',
+    id: 'european-train-network',
+    authorId: 'nicolas',
+    title: 'What if, instead of investing billions in AI, we built a European train network?',
     paragraphs: [
-      'This is Starline, a blueprint for an EU high speed train network, created by the think tank 21st Europe. Unfortunately, it is far away from our current reality.',
-      'I used to be able to travel by train from Lisbon to Berlin, but since 2020 the connection Lisbon Madrid is cancelled and there is not a single train connection from Portugal to the rest of Europe, insane. (please correct me if someone knows one)',
-      'According to 21st Europe, replacing short-haul flights with high-speed rail could cut emissions by 95% and it is 30% faster than cars. Now we just need politicians bold enough to put this into practice. I will leave the link to the beautiful project outline by 21st Europe in the comments, thanks to Nicolas Pariès for showing it to me.'
+      "Here is Starline, a vision by the think tank 21st Europe. Isn't that what we all need, rather than robots writing copy for LinkedIn? Isn't this a truly exciting vision of our future? And the cherry on the cake: replacing short-haul flights with high-speed trains could cut emissions by 95%."
     ],
     language: 'en',
     createdAt: '2025-02-20',
@@ -116,75 +116,150 @@ export const letters: Letter[] = [
     sources: [
       {
         id: 's1',
-        url: 'https://metro.co.uk/2025/03/19/a-new-tube-europe-link-uk-39-european-countries-via-train-22753362',
-        title: 'A new tube linking 39 European countries via train',
-        publisher: 'Metro'
-      }
-    ],
-    about: {
-      title: 'What if, instead of investing billions in AI, we built a European train network?',
-      author: 'Nicolas Pariès'
-    }
-  },
-  {
-    id: 'we-need-night-trains',
-    authorId: 'nicolas',
-    title: 'We need night trains!',
-    paragraphs: [
-      "Odio nibh eget nibh felis in. Diam enim sit enim eu fringilla sed. Risus consectetur feugiat est tellus vel donec nunc. Vulputate ut non maecenas lectus natoque in auctor. Mauris urna ut urna magna. Mattis et fames faucibus mauris pellentesque at arcu varius. Imperdiet eu mi nibh scelerisque posuere nulla. Lectus pulvinar pellentesque mattis congue pulvinar potenti sagittis viverra nullam. Nec arcu condimentum a ut. Pellentesque egestas magna tortor purus quam ut lorem ullamcorper massa.",
-      "Neque id condimentum non ac ut. Mi amet consectetur mollis vestibulum cras condimentum tristique. Faucibus magna quam sit fermentum. Lectus accumsan suspendisse interdum et consequat facilisi ornare id. Sagittis orci magna proin est diam."
-    ],
-    language: 'en',
-    createdAt: '2025-05-07',
-    publishedAt: '2025-05-07',
-    status: 'published',
-    respondsTo: {
-      id: 'vision-train-network',
-      title: 'Now, here is a vision that I would love to make a reality',
-      authorId: 'philippe',
-      publishedAt: '2025-02-20'
-    },
-    approvedBy: ['lucie', 'philippe'],
-    sources: [
-      {
-        id: 's2',
         url: 'https://21st.europe/starline',
-        title: 'Starline — A blueprint for EU high-speed rail',
+        title: 'Starline — 21st Europe',
         publisher: '21st Europe'
       }
     ]
+  },
+  {
+    id: 'night-trains-reply',
+    authorId: 'philippe',
+    title: '',
+    paragraphs: [
+      "Yes — and the long-distance reach matters as much as the speed. I used to ride Lisbon to Berlin by train; since 2020 the Lisbon-Madrid leg is cancelled and there's not a single train connection from Portugal to the rest of Europe. Insane (please correct me if someone knows one).",
+      "Couple high-speed daytime with proper night trains and you've replaced most of the short-haul market. The CO₂ math becomes uncontestable, the experience becomes desirable."
+    ],
+    language: 'en',
+    createdAt: '2025-02-23',
+    publishedAt: '2025-02-23',
+    status: 'published',
+    respondsTo: {
+      id: 'european-train-network',
+      title: 'What if, instead of investing billions in AI, we built a European train network?',
+      authorId: 'nicolas',
+      publishedAt: '2025-02-20'
+    },
+    approvedBy: ['lucie', 'anton'],
+    sources: [
+      {
+        id: 's-night-1',
+        url: 'https://www.europeansleeper.eu/en',
+        title: 'European Sleeper',
+        publisher: 'European Sleeper'
+      }
+    ]
+  },
+  {
+    id: 'bratislava-reply',
+    authorId: 'stanislava',
+    title: '',
+    paragraphs: [
+      "Really sad to see Bratislava not on that map. It's the easiest connection to make: Vienna, Bratislava, Budapest — the famous triangle of three capitals each an hour apart. Shame to leave a member of the EU, right in the heart of Europe, out of the picture."
+    ],
+    language: 'en',
+    createdAt: '2025-02-24',
+    publishedAt: '2025-02-24',
+    status: 'published',
+    respondsTo: {
+      id: 'european-train-network',
+      title: 'What if, instead of investing billions in AI, we built a European train network?',
+      authorId: 'nicolas',
+      publishedAt: '2025-02-20'
+    },
+    approvedBy: ['lucie'],
+    sources: [
+      {
+        id: 's-brat-1',
+        url: 'https://en.wikipedia.org/wiki/Vienna%E2%80%93Bratislava_railway',
+        title: 'Vienna–Bratislava railway',
+        publisher: 'Wikipedia'
+      }
+    ]
+  },
+  // Nested reply: a reply to philippe's "night trains" reply, so visitors
+  // see how the "N réponses →" counter + permalink behave on the parent
+  // reply (the count appears under night-trains-reply and clicking it
+  // opens that reply on /read/night-trains-reply where this nested one
+  // appears in the inline replies section).
+  {
+    id: 'night-trains-nested-reply',
+    authorId: 'anton',
+    title: '',
+    paragraphs: [
+      "Berlin–Paris is about to come back as a night service in December — small but the direction is right. The hard part isn't the rolling stock, it's the cross-border path allocation; once a few operators run an end-to-end route the rest catches up."
+    ],
+    language: 'en',
+    createdAt: '2025-02-25',
+    publishedAt: '2025-02-25',
+    status: 'published',
+    respondsTo: {
+      id: 'night-trains-reply',
+      title: '',
+      authorId: 'philippe',
+      publishedAt: '2025-02-23'
+    },
+    approvedBy: ['lucie'],
+    sources: [
+      {
+        id: 's-nested-1',
+        url: 'https://www.deutschebahn.com/de/presse/pressestart_zentrales_uebersicht/Berlin-Paris-Wir-machen-die-Nacht-zum-Tag-12345678',
+        title: 'Berlin–Paris night train returns',
+        publisher: 'Deutsche Bahn'
+      }
+    ]
+  },
+
+  // Two example drafts + one in-review for the writing workspace in demo
+  // mode. Authored by `alice` (= the mock currentUser) so they show up in
+  // the "your drafts" / "your in-review" lists when no real Pod is
+  // connected. Visitors land on /write and see what the workspace will
+  // look like once they start writing for real.
+  {
+    id: 'demo-draft-circles',
+    authorId: 'alice',
+    title: 'Why I joined Kind',
+    paragraphs: [
+      'Notes I want to expand on before publishing — the move from infinite scroll to a daily 17-action ceiling has changed how I think about reading.'
+    ],
+    language: 'en',
+    createdAt: '2025-06-05',
+    publishedAt: '2025-06-05',
+    status: 'draft',
+    approvedBy: [],
+    sources: []
+  },
+  {
+    id: 'demo-draft-untitled',
+    authorId: 'alice',
+    title: '',
+    paragraphs: [],
+    language: 'en',
+    createdAt: '2025-06-08',
+    publishedAt: '2025-06-08',
+    status: 'draft',
+    approvedBy: [],
+    sources: []
+  },
+  {
+    id: 'demo-inreview-trains',
+    authorId: 'alice',
+    title: 'A first draft about night trains',
+    paragraphs: [
+      'Currently with my reviewers — three peers from my reading circle.'
+    ],
+    language: 'en',
+    createdAt: '2025-06-06',
+    publishedAt: '2025-06-06',
+    status: 'in-review',
+    approvedBy: [],
+    sources: []
   }
 ];
 
-export const comments: Comment[] = [
-  {
-    id: 'c1',
-    letterId: 'vision-train-network',
-    authorId: 'nicolas',
-    paragraphs: ['Thanks for sharing Philippe!'],
-    publishedAt: '2025-02-22',
-    approvedBy: ['stephanie'],
-    about: {
-      title: 'Now, here is a vision that I would love to make a reality',
-      author: 'Philippe Birker'
-    }
-  },
-  {
-    id: 'c2',
-    letterId: 'vision-train-network',
-    authorId: 'stanislava',
-    paragraphs: [
-      "Really sad to see Bratislava not on that picture. It's the easiest connection to make, Vienna, Bratislava, Budapest.",
-      "The famous triangle of 3 capital cities each an hour from each other… shame you chose to leave one member of EU, right in the heart of Europe, out of your picture"
-    ],
-    publishedAt: '2025-02-23',
-    approvedBy: ['stephanie'],
-    about: {
-      title: 'Now, here is a vision that I would love to make a reality',
-      author: 'Philippe Birker'
-    }
-  }
-];
+// Inline comments — kept as scaffolding for the Thread component but the
+// demo's read flow leans on full-letter replies (above) rather than comments.
+export const comments: Comment[] = [];
 
 export const currentUser = users.alice;
 

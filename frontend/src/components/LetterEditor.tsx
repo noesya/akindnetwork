@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useCreate, useGetOne, useNotify, useUpdate } from 'ra-core';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -7,21 +7,20 @@ import { useCurrentUser } from '../hooks/useCurrentUser';
 import { useLetter } from '../hooks/useLetters';
 import { fromSlug, toSlug } from '../lib/letterSlug';
 import { submitDraftForReview } from '../lib/peerReviewApi';
+import Avatar from './Avatar';
 import SidebarField from './SidebarField';
 
 const MAX_WORDS = 500;
 const RESOURCE = 'Letter';
 
 type Props = {
-  // Optional inline override of the "in response to" target (used by the
-  // mock demo). Production replies come in via `location.state.respondsTo`,
-  // set by LetterView's "Respond" button when the user opens /write from a
-  // letter they want to reply to.
   respondsTo?: Letter['respondsTo'];
-  // When the route is /write/:draftId the parent passes the slug down — it's
-  // the last path segment of the Letter's Solid URI (eg. a UUID). We rebuild
-  // the full URI before talking to the dataProvider.
   draftId?: string;
+  // Rendered at the bottom of the center column, below the actions row.
+  // WritePage uses this slot to surface the drafts + in-review lists so
+  // they stay aligned with the text body above instead of becoming a
+  // separate page region.
+  children?: ReactNode;
 };
 
 /**
@@ -37,7 +36,11 @@ type Props = {
  * After the first save, the URL is replaced with /write/<newId> so the
  * editor switches into update mode and refreshes are idempotent.
  */
-export default function LetterEditor({ respondsTo: respondsToProp, draftId: draftIdProp }: Props) {
+export default function LetterEditor({
+  respondsTo: respondsToProp,
+  draftId: draftIdProp,
+  children
+}: Props) {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const notify = useNotify();
@@ -114,6 +117,10 @@ export default function LetterEditor({ respondsTo: respondsToProp, draftId: draf
   const wordsLeft = Math.max(0, MAX_WORDS - wordCount);
   const overLimit = wordCount > MAX_WORDS;
   const isEmpty = title.trim() === '' && body.trim() === '';
+  // In demo mode there's no Pod to save to — the editor stays interactive
+  // for the prototype experience, but write actions are blocked with a
+  // tooltip that points the user at /login.
+  const isDemo = user.isMock;
 
   // Build the resource payload for a save. The status is always written by
   // the FRONTEND for drafts; for "submit for review" the frontend saves as
@@ -188,27 +195,57 @@ export default function LetterEditor({ respondsTo: respondsToProp, draftId: draf
     }
   };
 
+  // Status to display in the right sidebar. For new letters there's no
+  // status yet — we fall back to "Brouillon" as the natural default. For
+  // existing ones (Pod-side, kind:status) we map to the localized label.
+  const existingStatus = existing?.['kind:status'] as
+    | 'draft'
+    | 'pending-review'
+    | 'published'
+    | 'rejected'
+    | undefined;
+  const statusLabel = (() => {
+    switch (existingStatus) {
+      case 'pending-review':
+        return t('me.status.inReview');
+      case 'published':
+        return t('me.status.published');
+      case 'rejected':
+        return t('editor.statusRejected');
+      default:
+        return t('me.status.draft');
+    }
+  })();
+
   return (
     <div className="editor">
-      <aside className="editor__meta">
-        <SidebarField label={t('letter.by')}>{user.name}</SidebarField>
-        <SidebarField label={t('letter.writtenOn')}>
-          {new Date().toLocaleDateString(i18n.language === 'fr' ? 'fr-FR' : 'en-GB', {
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric'
-          })}
-        </SidebarField>
+      {/* 3-column grid mirroring LetterView's reading layout:
+            qui (left) | quoi (center) | meta (right)
+          All three columns start at the same top edge — no title-only row.
+          Center column stacks title, body, actions, then children. */}
+      <aside className="editor__meta editor__meta--left">
+        <Avatar user={user} size="lg" />
+        <div className="editor__author-name">{user.name}</div>
+        {user.bio && <div className="editor__author-bio">{user.bio}</div>}
       </aside>
 
       <div className="editor__main">
-        <div className="editor__label">{t('editor.title')}</div>
-        <input
-          className="editor__title-input"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder={t('editor.title')}
-        />
+        {/* When writing a reply (respondsTo set), the editor hides the
+          title field — a reply doesn't carry its own heading, the subject
+          is the parent letter (shown in "À propos?" on the right). The
+          save still posts `name: ''`, which is fine: the read view
+          variant='reply' doesn't render a title either. */}
+        {!respondsTo && (
+          <>
+            <div className="editor__label">{t('editor.title')}</div>
+            <input
+              className="editor__title-input"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder={t('editor.title')}
+            />
+          </>
+        )}
 
         <div className="editor__label">{t('editor.text')}</div>
         <textarea
@@ -222,30 +259,45 @@ export default function LetterEditor({ respondsTo: respondsToProp, draftId: draf
           <button
             className="btn"
             type="button"
-            disabled={isEmpty || isSaving || submitting}
+            disabled={isDemo || isEmpty || isSaving || submitting}
             onClick={saveDraft}
+            title={isDemo ? t('demo.disabledHint') : undefined}
           >
             {isSaving ? t('editor.saving') : t('editor.saveDraft')}
           </button>
           <button
             className="btn"
             type="button"
-            disabled={isEmpty || isSaving || submitting || overLimit}
+            disabled={isDemo || isEmpty || isSaving || submitting || overLimit}
             onClick={sendForReview}
+            title={isDemo ? t('demo.disabledHint') : undefined}
           >
             {submitting ? t('editor.submitting') : t('editor.sendForReview')}
           </button>
           <span className="editor__count">{t('editor.wordsLeft', { count: wordsLeft })}</span>
         </div>
+
+        {/* Children slot — WritePage puts the drafts + in-review lists here
+          so they sit directly under the text area, sharing the same width
+          and visual column as the body. */}
+        {children}
       </div>
 
-      <aside className="editor__meta">
+      <aside className="editor__meta editor__meta--right">
+        <SidebarField label={t('letter.when')}>
+          {new Date().toLocaleDateString(i18n.language === 'fr' ? 'fr-FR' : 'en-GB', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+          })}
+        </SidebarField>
         {respondsTo && (
-          <SidebarField label={t('letter.inResponseTo')}>
+          <SidebarField label={t('letter.about')}>
             « {respondsTo.title || t('me.untitledDraft')} »
           </SidebarField>
         )}
-        <SidebarField label={t('editor.sources')}>
+        <SidebarField label={t('letter.status')}>{statusLabel}</SidebarField>
+        <SidebarField label={t('letter.sources')}>
           <textarea
             className="editor__sources-input"
             value={sourcesText}

@@ -1,0 +1,33 @@
+// Thin strip that tells anonymous visitors they're looking at example data,
+// rendered at the top of /read, /read/:id and /write when isMock is true.
+// /me has its own inline "mockBadge" so it doesn't render this banner — the
+// page would otherwise show the banner above the profile card AND the badge
+// inside it, which reads as duplicated.
+
+.demo-banner {
+  max-width: var(--max-page);
+  margin: 0 auto var(--space-6);
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--color-text-muted);
+
+  &__text {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 11px;
+  }
+
+  &__cta {
+    color: var(--color-text);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+}

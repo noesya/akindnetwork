@@ -14,13 +14,12 @@
     "approvedBy": "Approuvée par",
     "sources": "Sources ?",
     "status": "Statut",
-    "respondPublicly": "Répondre publiquement",
-    "writeToAuthor": "Écrire à {{name}}",
     "byAuthor": "par {{name}}",
     "contribute": "Contribuer",
     "noLetterYet": "Il n'y a pas encore de lettre.",
     "responses_one": "{{count}} réponse",
-    "responses_other": "{{count}} réponses"
+    "responses_other": "{{count}} réponses",
+    "respond": "Répondre à ce message"
   },
   "write": {
     "workspaceTitle": "Écrire",
@@ -40,6 +39,7 @@
     "sentForReview": "Lettre envoyée en relecture.",
     "saveFailed": "Impossible d'enregistrer la lettre.",
     "submitFailed": "Impossible d'envoyer la lettre en relecture.",
+    "statusRejected": "Rejetée",
     "wordsLeft": "{{count}} mots restants"
   },
   "review": {
@@ -134,6 +134,11 @@
   },
   "language": {
     "switch": "EN"
+  },
+  "demo": {
+    "banner": "Données d'exemple — vous explorez la maquette.",
+    "connect": "Connecter mon Pod",
+    "disabledHint": "Connectez votre Pod pour enregistrer."
   },
   "source": {
     "open": "Ouvrir la source"
