@@ -181,14 +181,17 @@ export default function LetterView({
     <>
       <article className={articleClass}>
         <aside className="letter-view__author">
-          {/* Avatar size collapses to md when scrolled (root) or for replies
-            (always compact by design). The bio is hidden in both cases via
-            CSS — the user wants replies to keep just photo + name. */}
-          <Avatar
-            user={author}
-            size={variant === 'reply' || authorCompact ? 'md' : 'lg'}
-          />
-          <div className="letter-view__author-name">{author.name}</div>
+          {/* Avatar + name wrap a Link to /u/<authorId> so clicking either
+            takes the reader to the author's profile page. Avatar size
+            collapses to md when scrolled (root) or for replies (always
+            compact by design). The bio is hidden in those cases via CSS. */}
+          <Link to={`/u/${author.id}`} className="letter-view__author-link">
+            <Avatar
+              user={author}
+              size={variant === 'reply' || authorCompact ? 'md' : 'lg'}
+            />
+            <span className="letter-view__author-name">{author.name}</span>
+          </Link>
           {variant === 'root' && (
             <div className="letter-view__author-bio">{author.bio}</div>
           )}
