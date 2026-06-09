@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useCreate, useGetOne, useNotify, useUpdate } from 'ra-core';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import type { Letter } from '../data/mock';
 import { useCurrentUser } from '../hooks/useCurrentUser';
+import { useLetter } from '../hooks/useLetters';
 import { fromSlug, toSlug } from '../lib/letterSlug';
 import { submitDraftForReview } from '../lib/peerReviewApi';
 import SidebarField from './SidebarField';
@@ -12,6 +13,10 @@ const MAX_WORDS = 500;
 const RESOURCE = 'Letter';
 
 type Props = {
+  // Optional inline override of the "in response to" target (used by the
+  // mock demo). Production replies come in via `location.state.respondsTo`,
+  // set by LetterView's "Respond" button when the user opens /write from a
+  // letter they want to reply to.
   respondsTo?: Letter['respondsTo'];
   // When the route is /write/:draftId the parent passes the slug down — it's
   // the last path segment of the Letter's Solid URI (eg. a UUID). We rebuild
@@ -32,10 +37,11 @@ type Props = {
  * After the first save, the URL is replaced with /write/<newId> so the
  * editor switches into update mode and refreshes are idempotent.
  */
-export default function LetterEditor({ respondsTo, draftId: draftIdProp }: Props) {
+export default function LetterEditor({ respondsTo: respondsToProp, draftId: draftIdProp }: Props) {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const notify = useNotify();
+  const location = useLocation();
   const { user } = useCurrentUser();
 
   // Resolve the slug (from the URL param) to a full Solid URI. We can only do
@@ -52,6 +58,7 @@ export default function LetterEditor({ respondsTo, draftId: draftIdProp }: Props
 
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
+  const [sourcesText, setSourcesText] = useState('');
   const [hydrated, setHydrated] = useState(false);
 
   // Fetch existing draft so /write/<slug> shows the saved content. Skipped
@@ -67,9 +74,37 @@ export default function LetterEditor({ respondsTo, draftId: draftIdProp }: Props
     if (existing && !hydrated) {
       setTitle(String(existing.name || existing['as:name'] || ''));
       setBody(String(existing.content || existing['as:content'] || ''));
+      // sources can deserialize as a single string OR an array
+      const rawSources = existing['kind:sources'];
+      const sources = Array.isArray(rawSources)
+        ? rawSources
+        : rawSources
+        ? [rawSources]
+        : [];
+      setSourcesText(sources.join('\n'));
       setHydrated(true);
     }
   }, [existing, hydrated]);
+
+  // "Reply to" comes from one of three places, in order:
+  //   1. props.respondsTo (mock demo path)
+  //   2. existing letter's `as:inReplyTo` (we're editing a draft that was
+  //      originally written as a reply)
+  //   3. location.state.respondsTo (just arrived from clicking "Respond" on
+  //      a LetterView)
+  const navStateRespond =
+    (location.state as { respondsTo?: { id: string; title: string } } | null)?.respondsTo;
+  const existingInReplyToUri = existing?.inReplyTo as string | undefined;
+  const { letter: existingParent } = useLetter(existingInReplyToUri);
+  const respondsTo:
+    | { id: string; title: string; authorId?: string; publishedAt?: string }
+    | undefined =
+    respondsToProp ||
+    (existingParent
+      ? { id: existingParent.id, title: existingParent.title }
+      : undefined) ||
+    navStateRespond ||
+    undefined;
 
   const [create, { isLoading: isCreating }] = useCreate();
   const [update, { isLoading: isUpdating }] = useUpdate();
@@ -84,12 +119,17 @@ export default function LetterEditor({ respondsTo, draftId: draftIdProp }: Props
   // the FRONTEND for drafts; for "submit for review" the frontend saves as
   // draft first and then the BACKEND flips the status (and assigns reviewers).
   const buildDraftPayload = () => {
+    const sources = sourcesText
+      .split('\n')
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0 && /^https?:\/\//.test(s));
     const data: Record<string, unknown> = {
       type: 'Note',
       name: title.trim(),
       content: body.trim(),
       'kind:status': 'draft',
-      'kind:language': i18n.language
+      'kind:language': i18n.language,
+      'kind:sources': sources
     };
     if (respondsTo?.id) data.inReplyTo = respondsTo.id;
     return data;
@@ -178,6 +218,15 @@ export default function LetterEditor({ respondsTo, draftId: draftIdProp }: Props
           rows={12}
         />
 
+        <div className="editor__label">{t('editor.sources')}</div>
+        <textarea
+          className="editor__sources-input"
+          value={sourcesText}
+          onChange={(e) => setSourcesText(e.target.value)}
+          rows={3}
+          placeholder={t('editor.sourcesPlaceholder')}
+        />
+
         <div className="editor__actions">
           <button
             className="btn"
@@ -202,7 +251,7 @@ export default function LetterEditor({ respondsTo, draftId: draftIdProp }: Props
       <aside className="editor__meta">
         {respondsTo && (
           <SidebarField label={t('letter.inResponseTo')}>
-            « {respondsTo.title} »
+            « {respondsTo.title || t('me.untitledDraft')} »
           </SidebarField>
         )}
       </aside>

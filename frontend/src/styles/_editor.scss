@@ -22,7 +22,8 @@
   }
 
   &__title-input,
-  &__body-input {
+  &__body-input,
+  &__sources-input {
     // Native form controls don't inherit the `color` of their ancestors —
     // without this, dark mode would render the input text in the UA's
     // default (often near-black) on top of our dark background.
@@ -69,6 +70,28 @@
     resize: vertical;
     min-height: 320px;
     padding: 0;
+  }
+
+  &__sources-input {
+    // Compact, monospace-flavoured area for pasting URLs — visually distinct
+    // from the serif body so users can tell at a glance "this is metadata,
+    // not prose".
+    width: 100%;
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.5;
+    padding: var(--space-3);
+    margin-top: var(--space-2);
+    margin-bottom: var(--space-5);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    outline: none;
+    resize: vertical;
+
+    &:focus {
+      border-color: var(--color-text);
+    }
   }
 
   &__actions {

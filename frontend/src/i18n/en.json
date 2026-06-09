@@ -18,7 +18,9 @@
     "writeToAuthor": "Write to {{name}}",
     "byAuthor": "by {{name}}",
     "contribute": "Contribute",
-    "noLetterYet": "No letter yet."
+    "noLetterYet": "No letter yet.",
+    "responses_one": "{{count}} response",
+    "responses_other": "{{count}} responses"
   },
   "write": {
     "workspaceTitle": "Write",
@@ -28,6 +30,8 @@
   "editor": {
     "title": "Title",
     "text": "Text",
+    "sources": "Sources (one URL per line)",
+    "sourcesPlaceholder": "https://example.org/article\nhttps://another-source.com/resource",
     "saveDraft": "Save as draft",
     "sendForReview": "Send for peer review",
     "saving": "Saving…",
@@ -42,7 +46,11 @@
     "prompt": "This letter is awaiting your review.",
     "approve": "Approve",
     "reject": "Reject",
-    "comingSoon": "Voting wires up next step (étape 3)"
+    "rejectPrompt": "Why are you rejecting this letter? (the author will read your comment)",
+    "notifyVoteRecorded": "Your vote has been recorded.",
+    "notifyPublished": "Letter published — the approval threshold has been reached.",
+    "notifyRejected": "Letter returned to the author — the rejection threshold has been reached.",
+    "failed": "Could not record your vote."
   },
   "limit": {
     "todayLabel": "Today",
@@ -85,6 +93,10 @@
         "sub": "What I know",
         "detail": "Sources, traceability, contextual details (fact-checking)"
       }
+    },
+    "credits":{
+      "title": "Credits",
+      "text": "Design: Arnaud Levy + Nicolas Pariès + Anthony Ferretti.<br>Logotype: Arnaud Levy. Development: noesya. Typefaces: Adelphe Floréal, Bricolage Grotesque. Source code: <a href=\"http://github.com/noesya/akindnetwork/\" target=\"_blank\">github.com/noesya/akindnetwork/</a>. Hosting: Infomaniak. Stack: ActivityPods."
     }
   },
   "me": {

@@ -5,6 +5,10 @@
 .about {
   @extend %page-container;
 
+  section {
+    margin-bottom: var(--space-8);
+  }
+
   &__title {
     font-size: 56px;
     line-height: 1.05;
@@ -113,5 +117,9 @@
     font-size: 14px;
     color: var(--color-text);
     line-height: 1.7;
+  }
+
+  &__credits {
+    text-align: center;
   }
 }

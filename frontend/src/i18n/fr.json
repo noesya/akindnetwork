@@ -18,7 +18,9 @@
     "writeToAuthor": "Écrire à {{name}}",
     "byAuthor": "par {{name}}",
     "contribute": "Contribuer",
-    "noLetterYet": "Il n'y a pas encore de lettre."
+    "noLetterYet": "Il n'y a pas encore de lettre.",
+    "responses_one": "{{count}} réponse",
+    "responses_other": "{{count}} réponses"
   },
   "write": {
     "workspaceTitle": "Écrire",
@@ -28,6 +30,8 @@
   "editor": {
     "title": "Titre",
     "text": "Texte",
+    "sources": "Sources (une URL par ligne)",
+    "sourcesPlaceholder": "https://exemple.org/article\nhttps://autre-source.fr/ressource",
     "saveDraft": "Enregistrer en brouillon",
     "sendForReview": "Envoyer en relecture",
     "saving": "Enregistrement…",
@@ -42,7 +46,11 @@
     "prompt": "Cette lettre attend votre relecture.",
     "approve": "Approuver",
     "reject": "Rejeter",
-    "comingSoon": "Vote disponible bientôt (étape 3)"
+    "rejectPrompt": "Pour quelle raison rejetez-vous cette lettre ? (l'auteur lira votre commentaire)",
+    "notifyVoteRecorded": "Votre vote a été enregistré.",
+    "notifyPublished": "Lettre publiée — le seuil d'approbations est atteint.",
+    "notifyRejected": "Lettre renvoyée à l'auteur — le seuil de rejets est atteint.",
+    "failed": "Impossible d'enregistrer votre vote."
   },
   "limit": {
     "todayLabel": "Aujourd'hui",
@@ -85,6 +93,10 @@
         "sub": "Ce que je sais",
         "detail": "Les sources, la traçabilité, les précisions contextuelles (fact-checking)"
       }
+    },
+    "credits":{
+      "title": "Crédits",
+      "text": "Design : Arnaud Levy + Nicolas Pariès + Anthony Ferretti. <br>Logotype : Arnaud Levy. <br>Développement : noesya. <br>Typographies : Adelphe Floréal, Bricolage Grotesque. <br>Code source : <a href=\"http://github.com/noesya/akindnetwork/\" target=\"_blank\">github.com/noesya/akindnetwork/</a>. <br>Hébergement : Infomaniak. <br>Stack : ActivityPods."
     }
   },
   "me": {

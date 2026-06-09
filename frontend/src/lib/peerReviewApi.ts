@@ -41,6 +41,24 @@ export type SubmitDraftResult = {
   reviewers: string[]; // WebIDs of the assigned reviewers
 };
 
+export type VoteResult = {
+  // Final status of the letter AFTER this vote was applied. "pending-review"
+  // means more votes are still needed; "published" / "draft" mean the
+  // aggregation threshold was reached this round.
+  status: 'pending-review' | 'published' | 'draft' | 'rejected';
+  approvedCount: number;
+  rejectedCount: number;
+  threshold: number;
+};
+
 export function submitDraftForReview(letterUri: string): Promise<SubmitDraftResult> {
   return call<SubmitDraftResult>('/kind/peer-review/submit-draft', { letterUri });
+}
+
+export function approveLetter(letterUri: string): Promise<VoteResult> {
+  return call<VoteResult>('/kind/peer-review/approve', { letterUri });
+}
+
+export function rejectLetter(letterUri: string, comment: string): Promise<VoteResult> {
+  return call<VoteResult>('/kind/peer-review/reject', { letterUri, comment });
 }

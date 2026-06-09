@@ -29,7 +29,7 @@ export default function AboutPage() {
         <p className="about__hero-sub">{t('about.subtitle')}</p>
       </section>
 
-      <section style={{ marginBottom: 'var(--space-8)' }}>
+      <section>
         <h2 className="about__section-title">{t('about.keyElementsTitle')}</h2>
         <div className="about__grid">
           {keys.map((key) => (
@@ -52,6 +52,11 @@ export default function AboutPage() {
             </div>
           ))}
         </div>
+      </section>
+      
+      <section className="about__credits">
+        <h2 className="about__section-title">{t('about.credits.title')}</h2>
+        <p dangerouslySetInnerHTML={{ __html: t('about.credits.text') }} />
       </section>
     </div>
   );
