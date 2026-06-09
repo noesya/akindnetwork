@@ -141,6 +141,10 @@
     "connect": "Connect my Pod",
     "disabledHint": "Connect your Pod to save."
   },
+  "user": {
+    "publishedLetters": "Published letters",
+    "noLetters": "This person hasn't published any letter yet."
+  },
   "source": {
     "open": "Open source"
   }

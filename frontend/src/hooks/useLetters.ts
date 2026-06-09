@@ -1,150 +1,121 @@
-// Letter & thread hooks with mock fallback.
+// Letter & thread hooks.
 //
-// Strategy: if the user is authenticated AND auth is configured, fetch real
-// letters via the SemApps data provider. Otherwise return the mock letters
-// from src/data/mock.ts so the prototype renders identically without a Pod.
+// When an authenticated user is reading, the data comes from the backend's
+// `kind-letters` index — a server-side aggregator that gives us cross-pod
+// visibility (a reviewer in pod A can see a letter in pod B because the
+// backend already has the AccessGrant to read it). The dataProvider is
+// still used for WRITES (the editor saves to the author's own pod) and
+// for reading one's own drafts directly.
 //
-// Pod letters are stored as as:Note (shape tree as/Note) with our minimal
-// `kind:` overlay: { name, content, kind:status, kind:language }. The mock
-// `Letter` type carries much richer fields (paragraphs, sources, approvedBy,
-// respondsTo…). We adapt Pod letters to that shape here so that the existing
-// LetterView/MePage components keep working with both data sources. Fields
-// the Pod doesn't carry yet are defaulted to empty/safe values.
-//
-// Phase 1 will refine the queries: an authenticated user reads from their
-// AS inbox (federated letters) and from the public outboxes of people they
-// approved. For now we just call getList on the Letter resource.
+// In demo mode (anonymous visitor) we fall back to `data/mock.ts` so the
+// prototype works without a Pod.
 
-import { useGetList, useGetOne } from 'ra-core';
+import { useEffect, useState } from 'react';
 import { letters as mockLetters, comments as mockComments } from '../data/mock';
-import { useCurrentUser, type CurrentUser } from './useCurrentUser';
+import { useCurrentUser } from './useCurrentUser';
 import { isAuthConfigured } from '../providers/setup';
 import type { Letter, Comment } from '../data/mock';
-import { fromSlug } from '../lib/letterSlug';
-
-type PodLetter = {
-  id: string;
-  name?: string;
-  content?: string;
-  'kind:status'?: 'draft' | 'pending-review' | 'published' | 'rejected';
-  'kind:language'?: string;
-  'kind:sources'?: string | string[];
-  'kind:assignedReviewers'?: string | string[];
-  'kind:approvedBy'?: string | string[];
-  'kind:rejectedBy'?:
-    | { reviewer: string; comment: string }
-    | { reviewer: string; comment: string }[];
-  'dc:created'?: string;
-  'dc:modified'?: string;
-  attributedTo?: string;
-  inReplyTo?: string;
-};
-
-// JSON-LD predicates can deserialize to a single object OR an array depending
-// on cardinality. Normalize so consumer code can always .filter/.map.
-const arrayOf = <T,>(v: T | T[] | undefined): T[] =>
-  v == null ? [] : Array.isArray(v) ? v : [v];
+import { fetchById, fetchChildren, fetchFeed, type LetterEntry } from '../lib/lettersApi';
+import { toSlug } from '../lib/letterSlug';
 
 const PARAGRAPH_SEPARATOR = /\n{2,}/;
 
-function podStatusToMock(s: PodLetter['kind:status']): Letter['status'] {
+function backendStatusToMock(s: LetterEntry['status']): Letter['status'] {
   if (s === 'pending-review') return 'in-review';
   if (s === 'published') return 'published';
   return 'draft';
 }
 
-// Pod-only fields that LetterView doesn't know about yet but the review UI
-// needs. We stash them on the Letter via an extension type rather than
-// widening the mock-side Letter shape (keeps the demo simple).
+// Pod-only fields the mock Letter type doesn't carry. We stash them on a
+// wider extension type instead of widening the demo Letter shape.
 export type LetterWithReview = Letter & {
   assignedReviewers?: string[];
   approvedByWebIds?: string[];
   rejectedByEntries?: { reviewer: string; comment: string }[];
-  // Raw URI of the letter this one replies to (`as:inReplyTo`). Mock letters
-  // use the richer `respondsTo: {id, title, authorId, publishedAt}` object;
-  // Pod letters carry only the URI and LetterView fetches the parent's title
-  // separately via useLetter.
   inReplyToUri?: string;
-  // Flat array of source URLs. Mock letters use the richer Source[] shape
-  // (with title/author/publisher); Pod letters keep it minimal (URLs only,
-  // per product decision).
   sourceUrls?: string[];
 };
 
-function podLetterToLetter(p: PodLetter, currentUser: CurrentUser): LetterWithReview {
-  const created = p['dc:created'] || new Date().toISOString();
-  const body = (p.content || '').trim();
+function entryToLetter(entry: LetterEntry): LetterWithReview {
+  const body = (entry.content || '').trim();
+  // Extract a short, stable "authorId" from the WebID so the LetterView's
+  // mock `users` map can still match where it can (alice, philippe, …).
+  // For unknown authors the WebID itself is fine — LetterView falls back
+  // to a stub when the users map doesn't know the id.
+  const authorId =
+    entry.authorWebId.split('/').filter(Boolean).pop() || entry.authorWebId;
+  const created = entry.publishedAt || new Date().toISOString();
   return {
-    id: p.id,
-    authorId: currentUser.id,
-    title: p.name || '',
+    id: entry.uri,
+    authorId,
+    title: entry.title || '',
     paragraphs: body ? body.split(PARAGRAPH_SEPARATOR) : [],
-    language: (p['kind:language'] === 'en' ? 'en' : 'fr') as Letter['language'],
+    language: (entry.language === 'en' ? 'en' : 'fr') as Letter['language'],
     createdAt: created,
-    publishedAt: p['dc:modified'] || created,
-    status: podStatusToMock(p['kind:status']),
-    approvedBy: [],
+    publishedAt: created,
+    status: backendStatusToMock(entry.status),
+    approvedBy: [], // TODO: surface entry.approvedBy webids once we have name resolution
     sources: [],
-    assignedReviewers: arrayOf(p['kind:assignedReviewers']),
-    approvedByWebIds: arrayOf(p['kind:approvedBy']),
-    rejectedByEntries: arrayOf(p['kind:rejectedBy']),
-    inReplyToUri: p.inReplyTo || undefined,
-    sourceUrls: arrayOf(p['kind:sources']).filter(
-      (u): u is string => typeof u === 'string' && u.startsWith('http')
-    )
+    assignedReviewers: entry.assignedReviewers,
+    approvedByWebIds: entry.approvedBy,
+    rejectedByEntries: entry.rejectedBy,
+    inReplyToUri: entry.parentUri || undefined,
+    sourceUrls: entry.sources
   };
 }
 
-export function useLetters(): { letters: Letter[]; isLoading: boolean } {
-  const { user, isAuthenticated } = useCurrentUser();
+/**
+ * Topological filter for the demo (mock) feed. The backend applies the same
+ * rule server-side, so we don't reapply it on the live path.
+ */
+function visibleInFlux(collection: LetterWithReview[]): LetterWithReview[] {
+  const childCount = new Map<string, number>();
+  for (const l of collection) {
+    const parentId = l.respondsTo?.id || l.inReplyToUri;
+    if (parentId) childCount.set(parentId, (childCount.get(parentId) ?? 0) + 1);
+  }
+  return collection.filter((l) => {
+    const hasParent = !!l.respondsTo || !!l.inReplyToUri;
+    if (!hasParent) return true;
+    return (childCount.get(l.id) ?? 0) > 0;
+  });
+}
+
+/**
+ * The main reading flow. Authenticated → backend index; anonymous → mocks
+ * (with the same topological filter applied locally).
+ */
+export function useLetters(): { letters: LetterWithReview[]; isLoading: boolean } {
+  const { isAuthenticated } = useCurrentUser();
   const shouldFetch = isAuthConfigured && isAuthenticated;
 
-  const { data, isLoading } = useGetList<PodLetter>(
-    'Letter',
-    {
-      pagination: { page: 1, perPage: 50 },
-      // dc:modified is one of the few predicates SemApps reliably indexes —
-      // safer than `published` which doesn't exist in our minimal model.
-      sort: { field: 'dc:modified', order: 'DESC' }
-    },
-    { enabled: shouldFetch }
-  );
+  const [data, setData] = useState<LetterWithReview[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(shouldFetch);
 
-  // `/read` shows two kinds of letters:
-  //  - Published ones (the public flow).
-  //  - Pending-review ones I'm personally assigned to and haven't voted on
-  //    yet. They appear in the same stream so I encounter them naturally
-  //    while reading; this matches the user's choice 4B (no separate review
-  //    queue). Filter logic mirrors what the LetterView uses to decide
-  //    whether to show approve/reject buttons.
-  const visibleToMe = (l: LetterWithReview) => {
-    if (l.status === 'published') return true;
-    if (l.status !== 'in-review') return false;
-    if (!user.webId) return false;
-    const assigned = l.assignedReviewers ?? [];
-    const approved = l.approvedByWebIds ?? [];
-    const rejected = (l.rejectedByEntries ?? []).map((r) => r.reviewer);
-    return assigned.includes(user.webId) && !approved.includes(user.webId) && !rejected.includes(user.webId);
-  };
-
-  // Topological filter: a letter appears in the main /read flow only if
-  //   - it has no parent (root letter, opens a new thread), OR
-  //   - it has at least one published reply (it carries a sub-thread)
-  // Leaf replies are reachable only by drilling into their parent's
-  // "Replies" section — they don't clutter the main navigation. This is
-  // the "commentaire de commentaire" rule.
-  const visibleInFlux = (collection: LetterWithReview[]) => {
-    const childCount = new Map<string, number>();
-    for (const l of collection) {
-      const parentId = l.respondsTo?.id || l.inReplyToUri;
-      if (parentId) childCount.set(parentId, (childCount.get(parentId) ?? 0) + 1);
+  useEffect(() => {
+    if (!shouldFetch) {
+      setIsLoading(false);
+      return;
     }
-    return collection.filter((l) => {
-      const hasParent = !!l.respondsTo || !!l.inReplyToUri;
-      if (!hasParent) return true;
-      return (childCount.get(l.id) ?? 0) > 0;
-    });
-  };
+    let cancelled = false;
+    setIsLoading(true);
+    fetchFeed()
+      .then((r) => {
+        if (cancelled) return;
+        setData(r.letters.map(entryToLetter));
+      })
+      .catch((e) => {
+        if (cancelled) return;
+        console.warn('[useLetters] feed fetch failed:', e?.message || e);
+        setData([]);
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [shouldFetch]);
 
   if (!shouldFetch) {
     return {
@@ -154,107 +125,114 @@ export function useLetters(): { letters: Letter[]; isLoading: boolean } {
       isLoading: false
     };
   }
-  const adapted = (data ?? []).map((p) => podLetterToLetter(p, user));
-  return { letters: visibleInFlux(adapted.filter(visibleToMe)), isLoading };
+  return { letters: data, isLoading };
 }
 
+/**
+ * Resolve a slug-or-id to a Letter. Authenticated → backend by-slug
+ * lookup (works cross-pod); anonymous → match against mock data by id.
+ */
 export function useLetter(slugOrId: string | undefined): {
   letter: LetterWithReview | undefined;
   isLoading: boolean;
 } {
-  const { user, isAuthenticated } = useCurrentUser();
-  // The URL carries the short slug; rebuild the full Solid URI for the
-  // dataProvider. fromSlug returns the input unchanged if it's already a URI
-  // (mock id "letter-1" stays as-is for the demo fallback).
-  const fullId = slugOrId ? fromSlug(slugOrId, user.storage) : undefined;
-  // Don't fire useGetOne on a bare slug — we'd 404. Wait until storage is
-  // known and we have a proper http URI.
+  const { isAuthenticated } = useCurrentUser();
   const shouldFetch =
-    isAuthConfigured && isAuthenticated && !!fullId && fullId.startsWith('http');
+    isAuthConfigured && isAuthenticated && Boolean(slugOrId);
 
-  const { data, isLoading } = useGetOne<PodLetter>(
-    'Letter',
-    { id: fullId ?? '' },
-    { enabled: shouldFetch }
-  );
+  const [letter, setLetter] = useState<LetterWithReview | undefined>(undefined);
+  const [isLoading, setIsLoading] = useState<boolean>(shouldFetch);
+
+  useEffect(() => {
+    if (!shouldFetch || !slugOrId) {
+      setLetter(undefined);
+      setIsLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setIsLoading(true);
+    // The caller may pass either a bare UUID (the URL token) or a full
+    // Solid URI (legacy callsites). toSlug reduces both to the UUID,
+    // which is what the backend's `/kind/letters/:id` route expects.
+    const id = toSlug(slugOrId);
+    fetchById(id)
+      .then((e) => {
+        if (!cancelled) setLetter(entryToLetter(e));
+      })
+      .catch((e) => {
+        if (cancelled) return;
+        console.warn('[useLetter] byId failed:', e?.message || e);
+        setLetter(undefined);
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [shouldFetch, slugOrId]);
 
   if (!isAuthConfigured || !isAuthenticated) {
-    return { letter: mockLetters.find((l) => l.id === slugOrId), isLoading: false };
+    return {
+      letter: mockLetters.find((l) => l.id === slugOrId) as
+        | LetterWithReview
+        | undefined,
+      isLoading: false
+    };
   }
-  if (!data) return { letter: undefined, isLoading };
-  return { letter: podLetterToLetter(data, user), isLoading: false };
+  return { letter, isLoading };
 }
 
 /**
- * All letters that reply to `parentUri` (i.e. whose `as:inReplyTo` points
- * at it), sorted chronologically (oldest → newest). When the user isn't
- * authenticated, falls back to the mock data so the demo prototype keeps
- * showing thread structure on the read page.
- *
- * The query is intentionally unfiltered server-side: SemApps' filter
- * support for arbitrary predicates is uneven, and the user's "letters they
- * can read" set is already bounded by WAC. We fetch what they can see and
- * filter client-side.
+ * All published letters that reply to `parentUri`, sorted chronologically.
+ * Authenticated → backend cross-pod query; anonymous → mock fallback.
  */
 export function useChildren(parentUri: string | undefined): {
   children: LetterWithReview[];
   isLoading: boolean;
 } {
-  const { user, isAuthenticated } = useCurrentUser();
-  const shouldFetch = isAuthConfigured && isAuthenticated && Boolean(parentUri);
+  const { isAuthenticated } = useCurrentUser();
+  const shouldFetch =
+    isAuthConfigured && isAuthenticated && Boolean(parentUri);
 
-  const { data, isLoading } = useGetList<PodLetter>(
-    'Letter',
-    {
-      pagination: { page: 1, perPage: 200 },
-      sort: { field: 'dc:created', order: 'ASC' }
-    },
-    { enabled: shouldFetch }
-  );
+  const [children, setChildren] = useState<LetterWithReview[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(shouldFetch);
+
+  useEffect(() => {
+    if (!shouldFetch || !parentUri) {
+      setChildren([]);
+      setIsLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setIsLoading(true);
+    // useChildren is called with the parent's full Solid URI (since hooks
+    // sit between the LetterView's `letter.id` and the backend). Strip to
+    // the UUID for the REST path.
+    fetchChildren(toSlug(parentUri))
+      .then((r) => {
+        if (!cancelled) setChildren(r.letters.map(entryToLetter));
+      })
+      .catch((e) => {
+        if (cancelled) return;
+        console.warn('[useChildren] fetch failed:', e?.message || e);
+        setChildren([]);
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [shouldFetch, parentUri]);
 
   if (!shouldFetch || !parentUri) {
-    // Mock fallback — find letters whose respondsTo.id matches the parent.
     const matched = (mockLetters as LetterWithReview[]).filter(
       (l) => l.respondsTo?.id === parentUri && l.status === 'published'
     );
     return { children: matched, isLoading: false };
   }
-
-  const matched = (data ?? [])
-    .filter((p) => p.inReplyTo === parentUri && p['kind:status'] === 'published')
-    .map((p) => podLetterToLetter(p, user));
-  return { children: matched, isLoading };
-}
-
-/**
- * Count of how many published letters reply (directly) to each given URI.
- * Returns a Map<parentUri, number>. Used by the read flow to show a "N
- * réponses" badge next to a letter without N+1 queries.
- */
-export function useChildCounts(): { counts: Map<string, number>; isLoading: boolean } {
-  const { isAuthenticated } = useCurrentUser();
-  const shouldFetch = isAuthConfigured && isAuthenticated;
-
-  const { data, isLoading } = useGetList<PodLetter>(
-    'Letter',
-    { pagination: { page: 1, perPage: 200 }, sort: { field: 'dc:created', order: 'ASC' } },
-    { enabled: shouldFetch }
-  );
-
-  const counts = new Map<string, number>();
-  const source: PodLetter[] = shouldFetch
-    ? data ?? []
-    : (mockLetters as any[]).map((l) => ({
-        id: l.id,
-        inReplyTo: l.respondsTo?.id,
-        'kind:status': l.status === 'in-review' ? 'pending-review' : l.status
-      }));
-  for (const p of source) {
-    if (p.inReplyTo && p['kind:status'] === 'published') {
-      counts.set(p.inReplyTo, (counts.get(p.inReplyTo) ?? 0) + 1);
-    }
-  }
-  return { counts, isLoading };
+  return { children, isLoading };
 }
 
 export function useComments(letterId: string | undefined): {
@@ -262,7 +240,10 @@ export function useComments(letterId: string | undefined): {
   isLoading: boolean;
 } {
   const { isAuthenticated } = useCurrentUser();
-  // Phase 1: queries the `as:replies` collection of the letter. For now mock only.
+  // Inline comments aren't part of the indexed feed — Kind's discussion
+  // happens via full reply letters (see useChildren). The Thread component
+  // still expects a list, so we return mocks in demo mode and an empty
+  // array on the live path.
   if (!(isAuthConfigured && isAuthenticated) || !letterId) {
     return {
       comments: mockComments.filter((c) => c.letterId === letterId),

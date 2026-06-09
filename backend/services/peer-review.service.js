@@ -61,21 +61,21 @@ module.exports = {
       'api.addRoute',
       {
         route: {
-          path: '/kind',
+          path: '/peer-review',
           authentication: true,
           bodyParsers: { json: true },
           mappingPolicy: 'restrict',
           aliases: {
-            'POST /peer-review/submit-draft': 'kind-peer-review.submitDraft',
-            'POST /peer-review/approve': 'kind-peer-review.approve',
-            'POST /peer-review/reject': 'kind-peer-review.reject'
+            'POST /submit-draft': 'kind-peer-review.submitDraft',
+            'POST /approve': 'kind-peer-review.approve',
+            'POST /reject': 'kind-peer-review.reject'
           }
         },
         toBottom: false
       }
     );
 
-    this.logger.info('kind-peer-review HTTP route registered at /kind/peer-review/*');
+    this.logger.info('kind-peer-review HTTP route registered at /peer-review/*');
   },
 
   actions: {

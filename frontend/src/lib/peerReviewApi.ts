@@ -52,13 +52,13 @@ export type VoteResult = {
 };
 
 export function submitDraftForReview(letterUri: string): Promise<SubmitDraftResult> {
-  return call<SubmitDraftResult>('/kind/peer-review/submit-draft', { letterUri });
+  return call<SubmitDraftResult>('/peer-review/submit-draft', { letterUri });
 }
 
 export function approveLetter(letterUri: string): Promise<VoteResult> {
-  return call<VoteResult>('/kind/peer-review/approve', { letterUri });
+  return call<VoteResult>('/peer-review/approve', { letterUri });
 }
 
 export function rejectLetter(letterUri: string, comment: string): Promise<VoteResult> {
-  return call<VoteResult>('/kind/peer-review/reject', { letterUri, comment });
+  return call<VoteResult>('/peer-review/reject', { letterUri, comment });
 }

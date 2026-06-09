@@ -31,10 +31,28 @@
     top: var(--space-5);
   }
 
+  // Author link wraps the avatar + name so clicking either lands on the
+  // /u/:username profile page. Underline is suppressed by default — the
+  // affordance reads naturally because the avatar is recognisably tappable.
+  &__author-link {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3);
+    text-decoration: none;
+    color: inherit;
+
+    &:hover .letter-view__author-name {
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+  }
+
   &__author-name {
     font-family: var(--font-serif);
     font-size: 24px;
     line-height: 1.2;
+    color: var(--color-text);
   }
 
   &__author-bio {
@@ -45,7 +63,9 @@
 
   // Compact author layout — shared by scrolled-root and replies.
   &--author-compact &__author,
-  &--reply &__author {
+  &--reply &__author,
+  &--author-compact &__author-link,
+  &--reply &__author-link {
     display: grid;
     grid-template-columns: auto 1fr;
     column-gap: var(--space-3);

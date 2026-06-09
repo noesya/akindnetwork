@@ -140,6 +140,10 @@
     "connect": "Connecter mon Pod",
     "disabledHint": "Connectez votre Pod pour enregistrer."
   },
+  "user": {
+    "publishedLetters": "Lettres publiées",
+    "noLetters": "Cette personne n'a pas encore publié de lettre."
+  },
   "source": {
     "open": "Ouvrir la source"
   }

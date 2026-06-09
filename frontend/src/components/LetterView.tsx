@@ -248,16 +248,14 @@ export default function LetterView({
             {formatDate(letter.publishedAt, i18n.language)}
           </SidebarField>
 
-          {/* "About?" in the mockup = the parent letter this one is a reply
-            to. Always displayed in the sidebar (root or reply), so the body
-            text stays clean. Three sources of truth, in order:
+          {/* "À propos ?" — the parent letter this one replies to. Only
+            shown on the ROOT; replies share the same parent (= the root
+            sitting just above them), so repeating it on every reply card
+            would be noise. Three sources of truth, in order:
               1. letter.respondsTo (rich object, used by mock data)
               2. parent (resolved from inReplyToUri via useLetter)
               3. raw URI fallback if neither resolved yet
           */}
-          {/* "À propos ?" only shown on the root letter — replies all share
-            the same parent (which is the root above), so repeating it on
-            every reply card would be noise. */}
           {variant === 'root' && (letter.respondsTo || parent || reviewable.inReplyToUri) && (
             <SidebarField label={t('letter.about')}>
               {letter.respondsTo ? (
