@@ -5,7 +5,27 @@
 // prototype keeps working out of the box.
 
 import { useGetIdentity } from 'ra-core';
+import jwtDecode from 'jwt-decode';
 import { currentUser as mockUser, type User } from '../data/mock';
+
+/**
+ * Synchronous look at the JWT in localStorage so we can answer
+ * "is the user logged in?" BEFORE useGetIdentity finishes its async
+ * webId-document fetch. Without this, every page refresh would flash
+ * the mock data while identity loads.
+ */
+function extractTokenSession(): { webId: string } | null {
+  if (typeof window === 'undefined') return null;
+  const token = localStorage.getItem('token');
+  if (!token) return null;
+  try {
+    const payload = jwtDecode<{ webid?: string; webId?: string }>(token) as any;
+    const webId = payload?.webid || payload?.webId;
+    return webId ? { webId } : null;
+  } catch {
+    return null;
+  }
+}
 
 // `storage` is the user's `pim:storage` URI — the container under which all
 // of their resources live (Letters, profile, etc.). Lifted out of the WebID
@@ -19,8 +39,31 @@ export function useCurrentUser(): {
   isLoading: boolean;
 } {
   const { data, isLoading } = useGetIdentity();
+  const tokenSession = extractTokenSession();
 
   if (isLoading) {
+    // While the identity is still resolving, we already know from the
+    // JWT in localStorage whether the user IS logged in. Surface that
+    // synchronously so downstream hooks (useLetters etc.) don't fall back
+    // to mocks during the load and cause a visible flash. We can also
+    // derive the user.id + webId from the token claims; profile data
+    // (name, bio, avatar) will arrive in the second render below.
+    if (tokenSession) {
+      const { webId } = tokenSession;
+      return {
+        user: {
+          id: webId.split('/').pop() ?? 'me',
+          webId,
+          name: extractName(webId),
+          bio: '',
+          avatarInitials: initials(webId),
+          avatarColor: '#314a62',
+          isMock: false
+        },
+        isAuthenticated: true,
+        isLoading: true
+      };
+    }
     return { user: { ...mockUser, isMock: true }, isAuthenticated: false, isLoading: true };
   }
 

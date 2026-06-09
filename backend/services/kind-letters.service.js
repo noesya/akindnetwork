@@ -50,6 +50,7 @@ module.exports = {
           // the same reason.
           aliases: {
             'GET /feed': 'kind-letters.feed',
+            'POST /_rehydrate': 'kind-letters.rehydrate',
             'GET /by-author/:username': 'kind-letters.byAuthor',
             'GET /:id/children': 'kind-letters.children',
             'GET /:id': 'kind-letters.byId'
@@ -61,6 +62,16 @@ module.exports = {
       }
     );
     this.logger.info('kind-letters HTTP routes registered at /letters/*');
+
+    // The index is in-memory, so a backend restart loses every letter that
+    // was indexed during the previous run. Trigger a rehydrate on boot to
+    // re-discover all letters from every known user's pod via the SAI
+    // grants chain. We fire-and-forget (no `await`) so a slow scan doesn't
+    // block service startup; the index simply fills up progressively.
+    this.broker
+      .waitForServices(['app-registrations', 'pod-resources'])
+      .then(() => this.broker.call('kind-letters.rehydrate'))
+      .catch((e) => this.logger.warn(`auto-rehydrate skipped: ${e?.message || e}`));
   },
 
   created() {
@@ -201,6 +212,84 @@ module.exports = {
         }
         return found;
       }
+    },
+
+    /**
+     * Rebuild the index from scratch by scanning every registered user's
+     * Letters container. Necessary after a backend restart because the
+     * in-memory index doesn't persist. Triggered automatically on boot
+     * and also exposed at `POST /letters/_rehydrate` for manual recovery.
+     *
+     * For each user we walk the SAI chain:
+     *   AppRegistration → AccessGrants → DataGrants
+     * filter the DataGrants whose `interop:registeredShapeTree` is our
+     * as:Note shape, then GET each `interop:hasDataRegistration` URI as
+     * a container and index every letter it `ldp:contains`.
+     */
+    rehydrate: {
+      visibility: 'public',
+      async handler(ctx) {
+        const pods = (await ctx.call('app-registrations.getRegisteredPods')) || [];
+        this.logger.info(`kind-letters.rehydrate: scanning ${pods.length} pods`);
+        let indexed = 0;
+        const NOTE_SHAPE = 'https://shapes.activitypods.org/shapetrees/as/Note';
+
+        for (const webId of pods) {
+          try {
+            const appReg = await ctx.call('app-registrations.getForActor', {
+              actorUri: webId
+            });
+            const accessGrants = this._asArray(appReg?.['interop:hasAccessGrant']);
+            for (const agUri of accessGrants) {
+              const ag = await ctx
+                .call('access-grants.get', {
+                  resourceUri: agUri,
+                  webId: 'system'
+                })
+                .catch(() => null);
+              if (!ag) continue;
+              const dataGrants = this._asArray(ag['interop:hasDataGrant']);
+              for (const dgUri of dataGrants) {
+                const dg = await ctx
+                  .call('data-grants.get', {
+                    resourceUri: dgUri,
+                    webId: 'system'
+                  })
+                  .catch(() => null);
+                if (!dg) continue;
+                if (dg['interop:registeredShapeTree'] !== NOTE_SHAPE) continue;
+                const containerUri = dg['interop:hasDataRegistration'];
+                if (!containerUri) continue;
+                const containerRes = await ctx
+                  .call('pod-resources.get', {
+                    resourceUri: containerUri,
+                    actorUri: webId
+                  })
+                  .catch(() => null);
+                if (!containerRes?.ok || !containerRes.body) continue;
+                const letters = this._asArray(containerRes.body['ldp:contains']);
+                for (const lEntry of letters) {
+                  const letterUri =
+                    typeof lEntry === 'string'
+                      ? lEntry
+                      : lEntry?.id || lEntry?.['@id'];
+                  if (!letterUri) continue;
+                  await this._refreshEntry(ctx, letterUri, webId);
+                  indexed++;
+                }
+              }
+            }
+          } catch (e) {
+            this.logger.warn(
+              `kind-letters.rehydrate: pod ${webId} failed — ${e?.message || e}`
+            );
+          }
+        }
+        this.logger.info(
+          `kind-letters.rehydrate: done, indexed ${indexed} resource(s), ${this._index.size} live entries`
+        );
+        return { scanned: pods.length, indexed, liveEntries: this._index.size };
+      }
     }
   },
 
@@ -211,14 +300,17 @@ module.exports = {
     // truth — if the patch failed partway, our index would diverge.
     async 'kind.letter.submitted'(ctx) {
       const { letterUri, authorWebId } = ctx.params;
+      this.logger.info(`kind-letters: event submitted → refresh ${letterUri}`);
       await this._refreshEntry(ctx, letterUri, authorWebId);
     },
     async 'kind.letter.approved'(ctx) {
       const { letterUri, authorWebId } = ctx.params;
+      this.logger.info(`kind-letters: event approved → refresh ${letterUri}`);
       await this._refreshEntry(ctx, letterUri, authorWebId);
     },
     async 'kind.letter.rejected'(ctx) {
       const { letterUri, authorWebId } = ctx.params;
+      this.logger.info(`kind-letters: event rejected → refresh ${letterUri}`);
       await this._refreshEntry(ctx, letterUri, authorWebId);
     }
   },
