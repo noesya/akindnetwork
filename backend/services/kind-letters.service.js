@@ -77,8 +77,16 @@ module.exports = {
     // re-discover all letters from every known user's pod via the
     // cached DataGrants. Fire-and-forget so a slow scan doesn't block
     // service startup; the index fills up progressively.
+    //
+    // We MUST wait for `app` too, not just `data-grants` + `pod-resources`.
+    // `pod-resources.get` internally calls `app.get` to resolve the app
+    // actor for the outbound HTTP request — and AppService finishes
+    // registering ~2s AFTER its own dependencies are ready. Without this
+    // guard the first boot scan fires its fetches into the gap and every
+    // one fails with "Service 'app.get' is not found", leaving the index
+    // empty until a peer-review event re-triggers a refresh later on.
     this.broker
-      .waitForServices(['data-grants', 'pod-resources'])
+      .waitForServices(['app', 'data-grants', 'pod-resources'])
       .then(() => this.broker.call('kind-letters.rehydrate'))
       .catch((e) => this.logger.warn(`auto-rehydrate skipped: ${e?.message || e}`));
   },
