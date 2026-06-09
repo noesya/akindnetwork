@@ -73,21 +73,22 @@
   }
 
   &__sources-input {
-    // Compact, monospace-flavoured area for pasting URLs — visually distinct
-    // from the serif body so users can tell at a glance "this is metadata,
-    // not prose".
+    // Lives in the right meta sidebar (a narrow 280px column), so we keep
+    // the font small and let the textarea fill the column width. The body
+    // textarea is the "prose" element; this one is intentionally
+    // sans-serif and lower-weight to signal "metadata".
     width: 100%;
     font-family: var(--font-sans);
-    font-size: 14px;
+    font-size: 12px;
     line-height: 1.5;
-    padding: var(--space-3);
-    margin-top: var(--space-2);
-    margin-bottom: var(--space-5);
+    padding: var(--space-2);
+    margin-top: var(--space-1);
     border: 1px solid var(--color-line);
     border-radius: var(--radius-sm);
     background: transparent;
     outline: none;
     resize: vertical;
+    word-break: break-all;   // long URLs shouldn't blow up the column
 
     &:focus {
       border-color: var(--color-text);

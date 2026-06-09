@@ -218,15 +218,6 @@ export default function LetterEditor({ respondsTo: respondsToProp, draftId: draf
           rows={12}
         />
 
-        <div className="editor__label">{t('editor.sources')}</div>
-        <textarea
-          className="editor__sources-input"
-          value={sourcesText}
-          onChange={(e) => setSourcesText(e.target.value)}
-          rows={3}
-          placeholder={t('editor.sourcesPlaceholder')}
-        />
-
         <div className="editor__actions">
           <button
             className="btn"
@@ -254,6 +245,15 @@ export default function LetterEditor({ respondsTo: respondsToProp, draftId: draf
             « {respondsTo.title || t('me.untitledDraft')} »
           </SidebarField>
         )}
+        <SidebarField label={t('editor.sources')}>
+          <textarea
+            className="editor__sources-input"
+            value={sourcesText}
+            onChange={(e) => setSourcesText(e.target.value)}
+            rows={4}
+            placeholder={t('editor.sourcesPlaceholder')}
+          />
+        </SidebarField>
       </aside>
     </div>
   );
