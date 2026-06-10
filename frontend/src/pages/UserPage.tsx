@@ -8,6 +8,7 @@ import { useCurrentUser } from '../hooks/useCurrentUser';
 import { fetchByAuthor, type LetterEntry } from '../lib/lettersApi';
 import { isAuthConfigured } from '../providers/setup';
 import { toSlug } from '../lib/letterSlug';
+import { previewLabel } from '../lib/letterPreview';
 
 /**
  * /u/:username — public profile page. Shows the user's identity card on
@@ -113,7 +114,9 @@ export default function UserPage() {
               to={`/read/${toSlug(l.uri)}`}
               className="user-page__item"
             >
-              <span>{l.title || t('me.untitledDraft')}</span>
+              {/* Replies have no title — fall back to a body snippet so
+                each row is identifiable. See lib/letterPreview.ts. */}
+              <span>{previewLabel(l.title, l.content) || t('me.untitledDraft')}</span>
               <span className="user-page__item-meta">
                 {formatDate(l.publishedAt, i18n.language)}
               </span>

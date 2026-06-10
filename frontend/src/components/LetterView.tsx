@@ -24,6 +24,11 @@ type Props = {
   // Recursive children render in a slimmer style (compact title that links
   // to the dedicated /read/<id> page, so further descent is one click away).
   variant?: 'root' | 'reply';
+  // URL slug of the next pending letter to review, computed by the caller
+  // from the global feed. After a successful approve/reject, we navigate
+  // there to keep the review flow uninterrupted. Null/undefined → fall
+  // back to /read.
+  nextPendingSlug?: string | null;
 };
 
 /**
@@ -36,7 +41,8 @@ export default function LetterView({
   letter,
   showActions = true,
   renderReplies = true,
-  variant = 'root'
+  variant = 'root',
+  nextPendingSlug = null
 }: Props) {
   const { t, i18n } = useTranslation();
   const { user: me } = useCurrentUser();
@@ -128,6 +134,13 @@ export default function LetterView({
     };
   }, [variant]);
 
+  // Where to land after a successful vote. The review loop reads better when
+  // it auto-advances to the next reviewable letter instead of dumping the
+  // user back on the feed — they can chain 2-3 votes without re-navigating.
+  // Falls back to /read when the queue is empty.
+  const goToNextOrFeed = () =>
+    navigate(nextPendingSlug ? `/read/${nextPendingSlug}` : '/read');
+
   const [voting, setVoting] = useState(false);
   const onApprove = async () => {
     setVoting(true);
@@ -140,7 +153,7 @@ export default function LetterView({
         { type: 'success' }
       );
       refresh();
-      navigate('/read');
+      goToNextOrFeed();
     } catch (e: any) {
       notify(e?.message || 'review.failed', { type: 'error' });
     } finally {
@@ -160,7 +173,7 @@ export default function LetterView({
         { type: 'success' }
       );
       refresh();
-      navigate('/read');
+      goToNextOrFeed();
     } catch (e: any) {
       notify(e?.message || 'review.failed', { type: 'error' });
     } finally {

@@ -164,15 +164,20 @@ module.exports = {
     },
 
     /**
-     * Children of a given parent URI. Published-only and sorted
-     * chronologically — matches what the LetterView's "Réponses" section
-     * displays inline.
-     */
-    /**
-     * Published children of a parent letter, sorted chronologically.
-     * Parent is identified by its UUID (last path segment of its full URI)
-     * passed as a path param. The index already knows the parent's full
-     * URI, so we just resolve and filter.
+     * Children of a parent letter, sorted chronologically. Parent is
+     * identified by its UUID (last path segment of its full URI) passed
+     * as a path param.
+     *
+     * Visibility mirrors the main feed (see `visibleToMe` in `feed`):
+     *   - published replies → everyone sees them;
+     *   - pending-review replies → the current viewer sees them ONLY if
+     *     they're an eligible reviewer (not the author, hasn't voted).
+     * Without this, a reply submitted for peer review would be invisible
+     * under its parent letter even to the reviewers who could approve
+     * it — they'd only see it as a standalone entry in the main feed,
+     * stripped of its conversational context.
+     *
+     * Anonymous viewers (no Bearer) only see published.
      */
     children: {
       params: { id: 'string' },
@@ -188,10 +193,22 @@ module.exports = {
             'NOT_FOUND'
           );
         }
+
+        const me = ctx.meta.webId || 'anon';
+        const visibleToMe = (e) => {
+          if (e.status === 'published') return true;
+          if (e.status !== 'pending-review') return false;
+          if (me === 'anon') return false;
+          if (e.authorWebId === me) return false; // no self-review
+          const approved = e.approvedBy || [];
+          const rejected = (e.rejectedBy || []).map((r) =>
+            typeof r === 'string' ? r : r?.reviewer
+          );
+          return !approved.includes(me) && !rejected.includes(me);
+        };
+
         const list = Array.from(this._index.values())
-          .filter(
-            (e) => e.parentUri === parent.uri && e.status === 'published'
-          )
+          .filter((e) => e.parentUri === parent.uri && visibleToMe(e))
           .sort((a, b) =>
             (a.publishedAt || '').localeCompare(b.publishedAt || '')
           );

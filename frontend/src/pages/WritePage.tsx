@@ -7,6 +7,7 @@ import LetterEditor from '../components/LetterEditor';
 import { letters as mockLetters } from '../data/mock';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { toSlug } from '../lib/letterSlug';
+import { previewLabel } from '../lib/letterPreview';
 
 type PodLetter = {
   id: string;
@@ -116,7 +117,7 @@ function DraftsAndReview({ hasOpenDraft }: { hasOpenDraft: boolean }) {
           ) : (
             drafts.map((l) => (
               <Link key={l.id} to={`/write/${toSlug(l.id)}`} className="me__item">
-                <span>{l.name || t('me.untitledDraft')}</span>
+                <span>{previewLabel(l.name, l.content) || t('me.untitledDraft')}</span>
                 <span className="me__item-meta">
                   <span className="me__badge me__badge--draft">{t('me.status.draft')}</span>
                   {formatDate(l['dc:modified'] || l['dc:created'], i18n.language)}
@@ -133,7 +134,7 @@ function DraftsAndReview({ hasOpenDraft }: { hasOpenDraft: boolean }) {
           ) : (
             inReview.map((l) => (
               <Link key={l.id} to={`/write/${toSlug(l.id)}`} className="me__item">
-                <span>{l.name || t('me.untitledDraft')}</span>
+                <span>{previewLabel(l.name, l.content) || t('me.untitledDraft')}</span>
                 <span className="me__item-meta">
                   <span className="me__badge me__badge--review">{t('me.status.inReview')}</span>
                   {formatDate(l['dc:modified'] || l['dc:created'], i18n.language)}

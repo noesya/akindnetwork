@@ -30,6 +30,18 @@ export default function LetterPage() {
   const prevSlug = letters[idx - 1] ? toSlug(letters[idx - 1].id) : null;
   const nextSlug = letters[idx + 1] ? toSlug(letters[idx + 1].id) : null;
 
+  // After a vote (approve / reject) we want to send the reviewer straight
+  // to the next pending letter they can review — uninterrupted review flow.
+  // The feed is already sorted with pending-review entries at the top, so
+  // the first one we encounter that ISN'T the current letter is the right
+  // destination. Null means no more pending in the feed → fall back to /read.
+  const nextPendingSlug = (() => {
+    const nextPending = letters.find(
+      (l) => l.id !== letter.id && l.status === 'in-review'
+    );
+    return nextPending ? toSlug(nextPending.id) : null;
+  })();
+
   return (
     <>
       {user.isMock && <DemoBanner />}
@@ -50,7 +62,7 @@ export default function LetterPage() {
           )}
         </span>
       </nav>
-      <LetterView letter={letter} />
+      <LetterView letter={letter} nextPendingSlug={nextPendingSlug} />
       <Thread comments={letterComments} />
     </>
   );

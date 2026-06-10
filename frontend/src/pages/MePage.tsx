@@ -7,6 +7,7 @@ import DemoBanner from '../components/DemoBanner';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { isAuthConfigured } from '../providers/setup';
 import { toSlug } from '../lib/letterSlug';
+import { previewLabel } from '../lib/letterPreview';
 
 type PodLetter = {
   id: string;
@@ -85,7 +86,14 @@ export default function MePage() {
           <p className="muted">{t('me.emptyPublished')}</p>
         ) : (
           myPublished.map((l) => {
-            const title = 'title' in l ? l.title : l.name;
+            // Replies have no title — fall back to a body snippet so the row
+            // is recognisable in the list rather than rendering as a blank
+            // line with just a date and a badge.
+            const rawTitle = 'title' in l ? l.title : l.name;
+            const rawBody =
+              'paragraphs' in l ? l.paragraphs.join(' ') : l.content;
+            const label =
+              previewLabel(rawTitle, rawBody) || t('me.untitledDraft');
             const dateStr =
               'publishedAt' in l
                 ? new Date(l.publishedAt).toLocaleDateString(
@@ -98,7 +106,7 @@ export default function MePage() {
                 to={`/read/${toSlug(l.id)}`}
                 className="me__item"
               >
-                <span>{title}</span>
+                <span>{label}</span>
                 <span className="me__item-meta">
                   <span className="me__badge me__badge--published">{t('me.status.published')}</span>
                   {dateStr}
