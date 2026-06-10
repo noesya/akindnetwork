@@ -48,12 +48,12 @@ async function call<T>(path: string): Promise<T> {
 
 /**
  * Public feed for the current viewer:
- *   - every published letter (with topological filter applied server-side),
- *     plus
- *   - pending-review letters where I'm an assigned reviewer who hasn't
- *     voted yet.
+ *   - pending-review letters I can vote on (not the author, haven't voted
+ *     yet) — sorted to the TOP so the review backlog is visible first;
+ *   - every published letter (with topological filter applied server-side)
+ *     — sorted publishedAt desc within that group.
  *
- * Sorted publishedAt desc.
+ * Anonymous viewers only see published letters.
  */
 export function fetchFeed(): Promise<FeedResponse> {
   return call<FeedResponse>('/letters/feed');

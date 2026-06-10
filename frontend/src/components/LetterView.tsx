@@ -46,14 +46,17 @@ export default function LetterView({
 
   const reviewable = letter as LetterWithReview;
   const myWebId = me.webId;
-  // Approve/reject buttons appear when the viewer is an assigned reviewer
-  // who hasn't cast a ballot yet. The check mirrors useLetters' visibleToMe
-  // filter — the two need to agree, else letters would show up without a
-  // way to act on them (or vice versa).
+  // Approve/reject buttons appear for any logged-in user who isn't the
+  // author and hasn't already voted. Lazy assignment: there's no
+  // pre-picked reviewer list — the backend's feed surfaces pending letters
+  // to everyone eligible, and this check decides whether to render the
+  // ballot here. It mirrors kind-letters.feed's visibleToMe filter; the
+  // two need to stay in agreement, else a letter would appear without an
+  // actionable button.
   const canReview = Boolean(
     reviewable.status === 'in-review' &&
       myWebId &&
-      reviewable.assignedReviewers?.includes(myWebId) &&
+      reviewable.authorWebId !== myWebId &&
       !reviewable.approvedByWebIds?.includes(myWebId) &&
       !reviewable.rejectedByEntries?.some((r) => r.reviewer === myWebId)
   );

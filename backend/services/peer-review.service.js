@@ -1,7 +1,7 @@
 'use strict';
 
 const crypto = require('crypto');
-const { MoleculerError, MoleculerClientError } = require('moleculer').Errors;
+const { MoleculerClientError } = require('moleculer').Errors;
 
 /**
  * KindPeerReviewService — gates the publication of a letter behind peer approval.
@@ -12,34 +12,32 @@ const { MoleculerError, MoleculerClientError } = require('moleculer').Errors;
  *                                  |
  *                                  +--reject x 2-->  rejected (back to author)
  *
- * Étape 2 scope (this commit):
- *  - submitDraft picks 3 random reviewers from the pool of all WebIDs that
- *    have registered the app, excluding the author. The chosen WebIDs are
- *    written onto the Letter as `kind:assignedReviewers`, and the Letter's
- *    `kind:status` flips to "pending-review".
- *  - The pool comes straight from `app-registrations.getRegisteredPods` —
- *    no extra registry to maintain.
- *  - We DO NOT yet manage WebACL on the author's Pod (the backend doesn't
- *    have Control rights on remote resources). For now, assigned reviewers
- *    can see the Letter because their frontend will fetch it via the user's
- *    /proxy + Bearer token; the read flow's filter is what hides it from
- *    everyone else.
- *
- * Étape 3 (next commit):
- *  - approve / reject actions
- *  - aggregation: 2 approvals → published, 2 rejections → rejected
- *  - rejection stores a content hash so a verbatim re-submit is refused
+ * Lazy assignment model:
+ *  - There is NO pre-assignment of reviewers at submit time. submitDraft just
+ *    flips status to "pending-review" and zeroes the vote tallies; the pool
+ *    is implicitly "everyone except the author".
+ *  - Reviewers self-select by reading their /read feed. The kind-letters
+ *    index surfaces pending letters at the top of the feed for every viewer
+ *    who isn't the author and hasn't already voted. First two approves
+ *    publish, first two rejects send the letter back to draft.
+ *  - Rationale: pre-assigning N reviewers at submit was fragile — if any of
+ *    the chosen Ns went inactive, the letter stalled forever. Lazy
+ *    assignment auto-reallocates as readers come online, with zero
+ *    bookkeeping.
+ *  - Legacy `kind:assignedReviewers` on already-pending letters is ignored
+ *    by the runtime (the feed filter doesn't read it; the vote action
+ *    doesn't check it). New submissions never write it.
  *
  * Rules:
- *  - Threshold is fixed at 2 approvals (KIND_REVIEW_THRESHOLD).
+ *  - Threshold is 2 approvals OR 2 rejections, first to reach it wins
+ *    (KIND_REVIEW_THRESHOLD, default 2).
  *  - submitDraft counts against the 17/day quota; approving/rejecting are free.
  */
 module.exports = {
   name: 'kind-peer-review',
 
   settings: {
-    threshold: parseInt(process.env.KIND_REVIEW_THRESHOLD || '2', 10),
-    reviewerCount: parseInt(process.env.KIND_REVIEWER_COUNT || '3', 10)
+    threshold: parseInt(process.env.KIND_REVIEW_THRESHOLD || '2', 10)
   },
 
   // We only hard-depend on `api` so that addRoute exists. The pod-resources
@@ -80,17 +78,19 @@ module.exports = {
 
   actions: {
     /**
-     * Move a letter from draft to pending-review, assigning N random reviewers
-     * from the pool of registered users (excluding the author).
+     * Move a letter from draft to pending-review. The pool of reviewers is
+     * implicit — everyone except the author — so this action does NOT
+     * pre-pick anyone; the kind-letters feed surfaces the letter to every
+     * eligible viewer until two approves or two rejects close it.
      *
      * Throws if:
+     *  - Caller isn't authenticated
      *  - Letter is not in draft state
-     *  - Caller is not the author
-     *  - Content hashes to a previous rejection (forces a real edit)
-     *  - Pool has fewer than N candidates
+     *  - Content hashes to a previous rejection (forces a real edit before resubmit)
      *
-     * Returns { reviewers: [webId, ...] } so the frontend can display who's
-     * been asked to review.
+     * Returns { status: 'pending-review' }. Earlier versions returned the
+     * picked reviewers; the frontend no longer needs that since assignment
+     * is lazy.
      */
     submitDraft: {
       params: { letterUri: 'string' },
@@ -130,41 +130,25 @@ module.exports = {
           );
         }
 
-        // Pool = everyone who's registered the app, minus the author.
-        const pool = await this._getReviewerPool(ctx, callerWebId);
-        if (pool.length < this.settings.reviewerCount) {
-          // 503 Service Unavailable is the closest standard status for "the
-          // app is up but can't accept this submission right now because the
-          // network doesn't have enough peers yet". The message must include
-          // the actual numbers so the user knows whether to retry later.
-          throw new MoleculerError(
-            `Not enough reviewers available (${pool.length}/${this.settings.reviewerCount}). ` +
-              `The network needs ${this.settings.reviewerCount} other registered users before a letter ` +
-              `can be submitted for review.`,
-            503,
-            'NOT_ENOUGH_REVIEWERS',
-            { available: pool.length, required: this.settings.reviewerCount }
-          );
-        }
-        const reviewers = this._sample(pool, this.settings.reviewerCount);
-
+        // Flip the status. No pre-assignment — readers self-select via the
+        // feed. We wipe `assignedReviewers` for legacy resubmits and zero
+        // any leftover vote tallies from a prior cycle.
         await this._patchLetter(
           ctx,
           letterUri,
           letter,
           {
             'kind:status': 'pending-review',
-            'kind:assignedReviewers': reviewers,
-            // Wipe any leftover vote tallies from a prior cycle.
+            'kind:assignedReviewers': [],
             'kind:approvedBy': [],
             'kind:rejectedBy': []
           },
           callerWebId
         );
 
-        ctx.emit('kind.letter.submitted', { letterUri, authorWebId: callerWebId, reviewers });
+        ctx.emit('kind.letter.submitted', { letterUri, authorWebId: callerWebId });
 
-        return { reviewers };
+        return { status: 'pending-review' };
       }
     },
 
@@ -172,9 +156,13 @@ module.exports = {
      * A reviewer votes "approve" on a letter awaiting review.
      *
      * Rules:
-     *   - Caller must be in `kind:assignedReviewers`
+     *   - Caller must NOT be the author (no self-review)
      *   - Caller must not have already voted (approve OR reject)
      *   - After tallying, if approves ≥ threshold → status flips to "published"
+     *
+     * With lazy assignment, "is this reviewer allowed?" reduces to "are
+     * they not the author and haven't voted yet?" — no pool membership
+     * check anymore.
      *
      * The caller is the REVIEWER; the resource being patched lives on the
      * AUTHOR'S Pod. We use pod-resources with `actorUri = authorWebId` so the
@@ -241,12 +229,14 @@ module.exports = {
         );
       }
 
-      const assigned = this._asArray(letter['kind:assignedReviewers']);
-      if (!assigned.includes(reviewerWebId)) {
+      // No self-review: an author cannot vote on their own letter. This is
+      // the only structural restriction now — everyone else in the network
+      // is implicitly eligible (assignment is lazy via the feed).
+      if (reviewerWebId === authorWebId) {
         throw new MoleculerClientError(
-          'You are not assigned as a reviewer for this letter',
+          'You cannot review your own letter',
           403,
-          'NOT_ASSIGNED'
+          'SELF_REVIEW'
         );
       }
 
@@ -405,29 +395,6 @@ module.exports = {
         );
       }
       return merged;
-    },
-
-    /**
-     * The reviewer pool is the set of WebIDs whose AppRegistration we hold
-     * (i.e. anyone who's clicked through SAI consent for Kind), minus the
-     * author themselves. Self-review is never allowed.
-     *
-     * Returned WebIDs are deduplicated and the order is whatever the LDP
-     * container returns — `_sample` shuffles before picking.
-     */
-    async _getReviewerPool(ctx, exclude) {
-      const all = (await ctx.call('app-registrations.getRegisteredPods')) || [];
-      return [...new Set(all)].filter(webId => webId && webId !== exclude);
-    },
-
-    /** Fisher-Yates-ish sample of `n` distinct elements. */
-    _sample(arr, n) {
-      const copy = arr.slice();
-      for (let i = copy.length - 1; i > 0; i--) {
-        const j = crypto.randomInt(0, i + 1);
-        [copy[i], copy[j]] = [copy[j], copy[i]];
-      }
-      return copy.slice(0, n);
     },
 
     _hashContent(letter) {

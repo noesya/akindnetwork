@@ -124,7 +124,9 @@ export default function LetterEditor({
 
   // Build the resource payload for a save. The status is always written by
   // the FRONTEND for drafts; for "submit for review" the frontend saves as
-  // draft first and then the BACKEND flips the status (and assigns reviewers).
+  // draft first and then the BACKEND flips the status to "pending-review".
+  // There's no reviewer pre-assignment — eligibility is implicit and the
+  // letter is picked up lazily by readers via the /read feed.
   const buildDraftPayload = () => {
     const sources = sourcesText
       .split('\n')

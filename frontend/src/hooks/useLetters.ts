@@ -29,6 +29,12 @@ function backendStatusToMock(s: LetterEntry['status']): Letter['status'] {
 // Pod-only fields the mock Letter type doesn't carry. We stash them on a
 // wider extension type instead of widening the demo Letter shape.
 export type LetterWithReview = Letter & {
+  // Author's full WebID — needed to gate the review UI ("no self-review")
+  // since `authorId` is a non-unique nickname.
+  authorWebId?: string;
+  // Legacy: present on pre-lazy-assignment letters. Read but never used by
+  // current flow (the feed/filter ignores it). Kept on the type to avoid
+  // breaking persisted data shape.
   assignedReviewers?: string[];
   approvedByWebIds?: string[];
   rejectedByEntries?: { reviewer: string; comment: string }[];
@@ -48,6 +54,7 @@ function entryToLetter(entry: LetterEntry): LetterWithReview {
   return {
     id: entry.uri,
     authorId,
+    authorWebId: entry.authorWebId,
     title: entry.title || '',
     paragraphs: body ? body.split(PARAGRAPH_SEPARATOR) : [],
     language: (entry.language === 'en' ? 'en' : 'fr') as Letter['language'],

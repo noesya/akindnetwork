@@ -38,7 +38,10 @@ async function call<T>(path: string, body: unknown): Promise<T> {
 }
 
 export type SubmitDraftResult = {
-  reviewers: string[]; // WebIDs of the assigned reviewers
+  // Just an ack — the letter is now `pending-review`. Reviewer assignment
+  // is lazy (any eligible reader can vote via the feed), so there's no
+  // pre-picked list to return.
+  status: 'pending-review';
 };
 
 export type VoteResult = {

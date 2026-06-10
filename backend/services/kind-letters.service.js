@@ -98,13 +98,24 @@ module.exports = {
 
   actions: {
     /**
-     * Feed visible to the current viewer:
-     *   - every published letter the topological filter keeps (no parent
-     *     OR at least one published reply), plus
-     *   - pending-review letters where the viewer is an assigned reviewer
-     *     who hasn't voted yet.
+     * Feed visible to the current viewer.
      *
-     * Sorted publishedAt desc so the most recent thread is on top.
+     * Composition:
+     *   - every PENDING-REVIEW letter the viewer can vote on:
+     *       not the author, hasn't already voted (approve OR reject).
+     *     There is no pre-assignment — anyone in the network is implicitly
+     *     eligible. This is how peer review actually finds reviewers:
+     *     people who open /read get pending letters surfaced in their flow.
+     *   - every PUBLISHED letter the topological filter keeps (no parent
+     *     OR at least one published reply).
+     *
+     * Ordering: pending letters at the TOP (most recent first), then
+     * published letters (most recent first). Putting pending up top is
+     * deliberate — it creates collective pressure to drain the review
+     * backlog rather than letting letters languish.
+     *
+     * Anonymous viewers only see published letters (no review action
+     * possible without a WebID).
      */
     feed: {
       async handler(ctx) {
@@ -115,19 +126,17 @@ module.exports = {
           if (e.status === 'published') return true;
           if (e.status !== 'pending-review') return false;
           if (me === 'anon') return false;
-          const assigned = e.assignedReviewers || [];
+          if (e.authorWebId === me) return false; // no self-review
           const approved = e.approvedBy || [];
-          const rejected = (e.rejectedBy || []).map((r) => r.reviewer);
-          return (
-            assigned.includes(me) &&
-            !approved.includes(me) &&
-            !rejected.includes(me)
+          const rejected = (e.rejectedBy || []).map((r) =>
+            typeof r === 'string' ? r : r?.reviewer
           );
+          return !approved.includes(me) && !rejected.includes(me);
         };
 
         // Topological filter applies only to published letters (a
-        // pending-review entry visible to me as a reviewer should ALWAYS
-        // show up even if it has no children yet).
+        // pending-review entry should ALWAYS show up to its eligible
+        // reviewers, even if it has no children yet).
         const childCount = new Map();
         for (const e of all) {
           if (e.parentUri && e.status === 'published') {
@@ -140,9 +149,15 @@ module.exports = {
           return (childCount.get(e.uri) ?? 0) > 0;
         });
 
-        visible.sort((a, b) =>
-          (b.publishedAt || '').localeCompare(a.publishedAt || '')
-        );
+        // Sort: pending first (status priority), then publishedAt desc
+        // within each group. localeCompare flipped because we want newest
+        // on top.
+        const statusRank = (s) => (s === 'pending-review' ? 0 : 1);
+        visible.sort((a, b) => {
+          const rankDiff = statusRank(a.status) - statusRank(b.status);
+          if (rankDiff !== 0) return rankDiff;
+          return (b.publishedAt || '').localeCompare(a.publishedAt || '');
+        });
 
         return { letters: visible, total: visible.length };
       }

@@ -120,10 +120,12 @@ Brouillon  ──Envoyer en relecture──▶  En relecture
 
 - *Brouillon* : visible seulement par l'auteur, modifiable, non listée
   dans le flux.
-- *En relecture* : trois pairs ont été tirés au sort hors de l'auteur
-  pour voter. La lettre n'apparaît pas encore dans le flux public ; elle
-  apparaît dans le flux des relecteurs assignés (et seulement eux),
-  intercalée avec leur lecture habituelle, jusqu'à ce qu'ils votent.
+- *En relecture* : la lettre entre dans le pool global. Aucune
+  pré-assignation : n'importe quel pair de Kind autre que l'auteur, qui
+  n'a pas encore voté, peut la relire. La lettre apparaît en haut du
+  flux de lecture de tous les pairs éligibles, jusqu'à ce que le seuil
+  soit atteint. Ce modèle « à la volée » évite qu'une lettre reste
+  bloquée parce que des relecteurs pré-désignés ne se reconnectent pas.
 - *Publiée* : seuil d'approbation (2 voix) atteint. La lettre rentre
   dans le flux selon la règle topologique du début de ce document.
 - *Brouillon (après rejet)* : seuil de rejet (2 voix) atteint. La
