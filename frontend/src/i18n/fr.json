@@ -117,8 +117,7 @@
     "account": "Compte",
     "connectPod": "Connecter mon Pod",
     "connectPodDisabled": "Auth non configurée — mode démo",
-    "logout": "Déconnexion",
-    "mockBadge": "Démo — données fictives"
+    "logout": "Déconnexion"
   },
   "login": {
     "title": "Connecter mon Pod",

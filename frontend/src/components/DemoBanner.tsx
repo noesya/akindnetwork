@@ -2,10 +2,10 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 /**
- * Sticky-feeling strip that tells anonymous visitors they're looking at the
- * demo data, not their own Pod. Rendered by ReadPage / LetterPage / WritePage
- * when `useCurrentUser().user.isMock === true`. /me has its own dedicated
- * badge (more contextual on the profile page) so it doesn't render this.
+ * Strip that tells anonymous visitors they're looking at the demo data, not
+ * their own Pod. Rendered consistently on every page exposed to anonymous
+ * users (ReadPage / LetterPage / WritePage / UserPage / MePage) whenever
+ * `useCurrentUser().user.isMock === true`.
  *
  * Click target on the right takes them to /login so they can connect their
  * Pod and switch to real data without hunting through the corner nav.

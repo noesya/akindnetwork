@@ -2,7 +2,7 @@
 
 .label {
   font-family: var(--font-sans);
-  font-size: 13px;
+  font-size: var(--text-sm);
   color: var(--color-text-muted);
   margin-bottom: var(--space-2);
 }

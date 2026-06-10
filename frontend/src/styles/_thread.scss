@@ -32,15 +32,15 @@
 
   &__name {
     font-family: var(--font-serif);
-    font-size: 18px;
+    font-size: var(--text-lead);
   }
 
   &__body {
     font-family: var(--font-serif);
 
     p {
-      font-size: 17px;
-      line-height: 1.6;
+      font-size: var(--text-lead);
+      line-height: var(--leading-relaxed);
       margin-bottom: var(--space-4);
     }
   }
@@ -49,6 +49,6 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-4);
-    font-size: 13px;
+    font-size: var(--text-sm);
   }
 }

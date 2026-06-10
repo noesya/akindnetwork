@@ -1,7 +1,40 @@
-// Desktop-first layout. Below 1000px we collapse all 3-column grids
-// and ease the page padding. Mobile-specific work is intentionally postponed.
+// Desktop-first responsive overrides. Below 1000px we:
+//   1. shrink the typography scale (the --text-* tokens redefined at the
+//      top mean every var(--text-…) callsite shrinks for free — no need
+//      to override individual selectors);
+//   2. collapse all 3-column grids to single columns;
+//   3. detach the sticky/absolute author + sidebar columns so they
+//      flow inline with the body;
+//   4. ease the global page padding.
+//
+// Mobile-specific UX work (dedicated mobile nav, etc.) is intentionally
+// postponed — the goal here is graceful degradation, not a mobile-first
+// design.
 
 @media (max-width: 1000px) {
+  // Typography scale — mobile values. Kept here (rather than in
+  // _tokens.scss) so all responsive overrides live in one file. The
+  // visual hierarchy is preserved (hero > display > h1 > h2 > h3 > h4
+  // > lead > base > sm > meta), only the absolute magnitudes shrink.
+  :root {
+    --text-meta:    11px;
+    --text-sm:      13px;
+    --text-base:    15px;
+    --text-lead:    17px;
+    --text-h4:      20px;
+    --text-h3:      22px;
+    --text-h2:      26px;
+    --text-h1:      32px;
+    --text-display: 40px;
+    --text-hero:    56px;
+
+    // Tighten the vertical breathing of page containers (%page-container).
+    // 48px → 16px: with the layout's own 16px padding-top, that leaves
+    // 32px between the screen edge and the first piece of content, which
+    // is a comfortable mobile rhythm without feeling cramped.
+    --page-margin-y: var(--space-4);
+  }
+
   .letter-view,
   .comment,
   .editor {
@@ -26,15 +59,25 @@
   }
 
   .about__grid,
-  .about__pillars__grid {
+  .about__pillars-grid {
     grid-template-columns: 1fr;
   }
 
-  .about__hero-title {
-    font-size: 56px;
-  }
+  // No more `.about__hero-title { font-size: 56px }` override here —
+  // the selector uses var(--text-hero), which is 88px on desktop and
+  // 56px on mobile thanks to the token redefinition above. Same net
+  // effect, one less special case.
 
   .layout {
     padding: var(--space-4);
+  }
+
+  .demo-banner {
+    margin-top: var(--space-6);
+    display: block;
+    text-align: center;
+    &__text {
+        margin-right: var(--space-1);
+    }
   }
 }

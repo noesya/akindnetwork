@@ -7,16 +7,16 @@
 
   &__title {
     font-family: var(--font-serif);
-    font-size: 40px;
+    font-size: var(--text-h1);
     margin-bottom: var(--space-5);
     letter-spacing: -0.02em;
   }
 
   &__hint {
-    font-size: 15px;
+    font-size: var(--text-base);
     color: var(--color-text-muted);
     margin-bottom: var(--space-6);
-    line-height: 1.5;
+    line-height: var(--leading-normal);
   }
 
   &__form {
@@ -27,13 +27,13 @@
 
   &__label {
     font-family: var(--font-sans);
-    font-size: 13px;
+    font-size: var(--text-sm);
     color: var(--color-text-muted);
   }
 
   &__input {
     font-family: var(--font-sans);
-    font-size: 16px;
+    font-size: var(--text-base);
     padding: var(--space-3) var(--space-4);
     border: 1px solid var(--color-line);
     border-radius: var(--radius-sm);
@@ -57,7 +57,7 @@
     padding: var(--space-4);
     border-radius: var(--radius-md);
     font-family: ui-monospace, "SF Mono", Menlo, monospace;
-    font-size: 13px;
+    font-size: var(--text-sm);
     overflow-x: auto;
     margin-bottom: var(--space-5);
   }

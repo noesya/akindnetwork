@@ -20,7 +20,7 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-5);
-    font-size: 13px;
+    font-size: var(--text-sm);
   }
 
   // Left column = "qui je suis". Same "big" mode as LetterView's author at
@@ -34,13 +34,13 @@
 
   &__author-name {
     font-family: var(--font-serif);
-    font-size: 24px;
-    line-height: 1.2;
+    font-size: var(--text-h3);
+    line-height: var(--leading-snug);
   }
 
   &__author-bio {
-    font-size: 13px;
-    line-height: 1.5;
+    font-size: var(--text-sm);
+    line-height: var(--leading-normal);
     color: var(--color-text-muted);
   }
 
@@ -61,8 +61,8 @@
   &__title-input {
     width: 100%;
     font-family: var(--font-serif);
-    font-size: 40px;
-    line-height: 1.15;
+    font-size: var(--text-h1);
+    line-height: var(--leading-snug);
     letter-spacing: -0.01em;
     border: none;
     outline: none;
@@ -79,8 +79,8 @@
   &__body-input {
     width: 100%;
     font-family: var(--font-serif);
-    font-size: 18px;
-    line-height: 1.6;
+    font-size: var(--text-lead);
+    line-height: var(--leading-relaxed);
     border: none;
     outline: none;
     background: repeating-linear-gradient(
@@ -102,8 +102,8 @@
     // sans-serif and lower-weight to signal "metadata".
     width: 100%;
     font-family: var(--font-sans);
-    font-size: 12px;
-    line-height: 1.5;
+    font-size: var(--text-meta);
+    line-height: var(--leading-normal);
     padding: var(--space-2);
     margin-top: var(--space-1);
     border: 1px solid var(--color-line);
@@ -127,13 +127,13 @@
 
   &__count {
     margin-left: auto;
-    font-size: 13px;
+    font-size: var(--text-sm);
     color: var(--color-text-muted);
   }
 
   &__label {
     font-family: var(--font-sans);
-    font-size: 13px;
+    font-size: var(--text-sm);
     color: var(--color-text-muted);
     margin-bottom: var(--space-1);
   }
@@ -141,7 +141,7 @@
   &__hint {
     font-family: var(--font-serif);
     color: var(--color-text-muted);
-    font-size: 22px;
+    font-size: var(--text-h4);
     margin-bottom: var(--space-5);
   }
 }

@@ -90,14 +90,42 @@ export default function LetterView({
   // Below: small avatar + name only — keeps the byline visible while making
   // room for the text. Only applies to the root letter; replies are already
   // compact by design. No-op outside the browser (SSR safety).
+  //
+  // DISABLED on narrow viewports (<1000px). On mobile the author column
+  // isn't sticky (see _responsive.scss neutralising `position: sticky`), so
+  // toggling the compact class on scroll would re-flow the (single-column)
+  // layout while the user reads — that's the glitch reported. We listen to
+  // matchMedia so the guard updates live if the user resizes their browser
+  // across the breakpoint, but in practice this is "desktop only".
   const [authorCompact, setAuthorCompact] = useState(false);
   useEffect(() => {
     if (variant !== 'root' || typeof window === 'undefined') return;
+    // Same breakpoint as _responsive.scss (max-width: 1000px). Keep the two
+    // in sync — if you bump one, bump the other.
+    const mq = window.matchMedia('(min-width: 1001px)');
     const threshold = window.innerHeight * 0.4;
     const onScroll = () => setAuthorCompact(window.scrollY > threshold);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
-    return () => window.removeEventListener('scroll', onScroll);
+
+    const attach = () => {
+      if (mq.matches) {
+        window.addEventListener('scroll', onScroll, { passive: true });
+        onScroll();
+      } else {
+        // Reset to the non-compact default — on mobile we want the layout
+        // the CSS expects (single column, no sticky), not a stuck compact
+        // class from a previous desktop session before a resize.
+        setAuthorCompact(false);
+      }
+    };
+    const detach = () => window.removeEventListener('scroll', onScroll);
+
+    attach();
+    const onMqChange = () => { detach(); attach(); };
+    mq.addEventListener('change', onMqChange);
+    return () => {
+      detach();
+      mq.removeEventListener('change', onMqChange);
+    };
   }, [variant]);
 
   const [voting, setVoting] = useState(false);

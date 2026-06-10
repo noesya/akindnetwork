@@ -33,7 +33,7 @@
     justify-content: center;
     border-radius: var(--radius-sm);
     background: var(--color-surface-soft);
-    font-size: 18px;
+    font-size: var(--text-lead);
 
     &:hover {
       background: var(--color-surface);
@@ -47,12 +47,12 @@
 
   &__publisher {
     font-family: var(--font-serif);
-    font-size: 26px;
+    font-size: var(--text-h3);
     margin-bottom: var(--space-2);
   }
 
   &__tagline {
-    font-size: 13px;
+    font-size: var(--text-sm);
     color: var(--color-text-muted);
   }
 
@@ -72,14 +72,14 @@
 
   &__body p {
     font-family: var(--font-serif);
-    font-size: 17px;
-    line-height: 1.6;
+    font-size: var(--text-lead);
+    line-height: var(--leading-relaxed);
     margin-bottom: var(--space-3);
   }
 
   &__link {
     margin-top: var(--space-5);
     display: inline-block;
-    font-size: 14px;
+    font-size: var(--text-sm);
   }
 }

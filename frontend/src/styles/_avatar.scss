@@ -20,12 +20,12 @@
   &--sm {
     width: 36px;
     height: 36px;
-    font-size: 13px;
+    font-size: var(--text-sm);
   }
 
   &--lg {
     width: 80px;
     height: 80px;
-    font-size: 22px;
+    font-size: var(--text-h4);
   }
 }

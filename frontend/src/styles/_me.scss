@@ -16,21 +16,13 @@
 
   &__name {
     font-family: var(--font-serif);
-    font-size: 32px;
+    font-size: var(--text-h2);
   }
 
   &__webid {
-    font-size: 13px;
+    font-size: var(--text-sm);
     color: var(--color-text-muted);
     word-break: break-all;
-  }
-
-  &__mock-badge {
-    @extend %pill;
-    margin-top: var(--space-2);
-    font-size: 11px;
-    background: var(--color-surface);
-    color: var(--color-text-muted);
   }
 
   &__section {
@@ -44,7 +36,7 @@
 
   &__item {
     font-family: var(--font-serif);
-    font-size: 20px;
+    font-size: var(--text-h4);
     padding: var(--space-3) 0;
     border-bottom: 1px solid var(--color-line);
     display: flex;
@@ -60,7 +52,7 @@
 
   &__item-meta {
     font-family: var(--font-sans);
-    font-size: 12px;
+    font-size: var(--text-meta);
     color: var(--color-text-muted);
     display: inline-flex;
     align-items: center;
@@ -69,7 +61,7 @@
 
   &__badge {
     @extend %pill;
-    font-size: 10px;
+    font-size: var(--text-meta);
     border: 1px solid currentColor;
 
     &--draft     { color: var(--color-text-muted); }
@@ -84,7 +76,7 @@
 
   &__lang-btn {
     font-family: var(--font-sans);
-    font-size: 14px;
+    font-size: var(--text-sm);
     padding: var(--space-2) var(--space-4);
     border-radius: var(--radius-sm);
     background: transparent;

@@ -20,10 +20,69 @@
   --color-warn: #b88a2a;
   --color-success: #2e7d4f;
 
-  // Typography
+  // Typography — families
   --font-serif: "Adelphe Floreal", "Iowan Old Style", "Cambria", Georgia, serif;
   --font-sans: "Bricolage Grotesque", -apple-system, BlinkMacSystemFont,
     "Segoe UI", sans-serif;
+
+  // ──────────────────────────────────────────────────────────────────────
+  // Typography — size scale
+  //
+  // 10 semantic steps, named by ROLE (not by number) so callsites read
+  // like intent: `font-size: var(--text-h2)` not `var(--text-32)`. Picking
+  // by purpose also lets us re-tune the scale without auditing every
+  // selector.
+  //
+  // Defaults below are DESKTOP — the project is desktop-first
+  // (see _responsive.scss). Mobile values are overridden in the media
+  // query at the bottom of this file. Both scales preserve the same
+  // visual hierarchy (hero > display > h1 > h2 > h3 > h4 > lead > base
+  // > sm > meta), only the absolute magnitudes change.
+  //
+  // Mapping cheat-sheet to the values currently used in the codebase:
+  //   --text-meta     12px / 11px      micro labels, dates, sidebar captions, badges
+  //   --text-sm       14px / 13px      small body, list items, metadata, buttons
+  //   --text-base     16px / 15px      default body — what html/body uses
+  //   --text-lead     18px / 17px      slightly bigger body — intros, card titles
+  //   --text-h4       22px / 20px      small headings, pillar titles, hero-sub
+  //   --text-h3       26px / 22px      section subtitles
+  //   --text-h2       32px / 26px      article H2
+  //   --text-h1       44px / 32px      article H1, page titles ("À propos")
+  //   --text-display  56px / 40px      page hero, big section openers
+  //   --text-hero     88px / 56px      max — the "A kind network" wordmark
+  // ──────────────────────────────────────────────────────────────────────
+  --text-meta:    12px;
+  --text-sm:      14px;
+  --text-base:    16px;
+  --text-lead:    18px;
+  --text-h4:      22px;
+  --text-h3:      26px;
+  --text-h2:      32px;
+  --text-h1:      44px;
+  --text-display: 56px;
+  --text-hero:    88px;
+
+  // ──────────────────────────────────────────────────────────────────────
+  // Typography — line heights
+  //
+  // Unitless (so they scale with font-size, never inheriting a stale
+  // computed px). Four named steps cover everything in the codebase:
+  //
+  //   --leading-tight    1.05    display + hero — the words don't need air
+  //   --leading-snug     1.2     headings — compact stack
+  //   --leading-normal   1.5     body default — the standard reading rhythm
+  //   --leading-relaxed  1.7     long-form / sources — extra breathing
+  //
+  // Conventional pairings:
+  //   meta + sm + base               → leading-normal
+  //   lead + h4 + h3 + h2 + h1       → leading-snug
+  //   display + hero                 → leading-tight
+  //   anything sustained by the eye  → leading-relaxed (e.g. article body)
+  // ──────────────────────────────────────────────────────────────────────
+  --leading-tight:    1.05;
+  --leading-snug:     1.2;
+  --leading-normal:   1.5;
+  --leading-relaxed:  1.7;
 
   // Spacing scale (multiples of 4px). Index doubles as memorability cue.
   --space-1: 4px;
@@ -45,6 +104,13 @@
   // Layout maxima
   --max-content: 720px;
   --max-page: 1920px;
+
+  // Vertical breathing room around top-level page containers (.about,
+  // .me, .letter-view, .editor, …). Read by %page-container in
+  // _placeholders.scss. Shrinks on mobile via _responsive.scss — without
+  // that override, every page sat behind a 48px empty band before its
+  // first pixel, which on a phone reads as "did the page even load?".
+  --page-margin-y: var(--space-7);
 }
 
 // Dark mode — follows the user's OS preference. No JS toggle, no flash on load.

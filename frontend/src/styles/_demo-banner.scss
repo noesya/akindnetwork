@@ -1,8 +1,7 @@
-// Thin strip that tells anonymous visitors they're looking at example data,
-// rendered at the top of /read, /read/:id and /write when isMock is true.
-// /me has its own inline "mockBadge" so it doesn't render this banner — the
-// page would otherwise show the banner above the profile card AND the badge
-// inside it, which reads as duplicated.
+// Thin strip that tells anonymous visitors they're looking at example data.
+// Rendered at the top of EVERY anonymous-accessible page (/read, /read/:id,
+// /write, /u/:username, /me) when isMock is true — a single visual signal
+// across the whole app, with the same "Connect my Pod" CTA in every spot.
 
 .demo-banner {
   max-width: var(--max-page);
@@ -16,13 +15,13 @@
   background: var(--color-surface);
   border-radius: var(--radius-md);
   font-family: var(--font-sans);
-  font-size: 13px;
+  font-size: var(--text-sm);
   color: var(--color-text-muted);
 
   &__text {
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    font-size: 11px;
+    font-size: var(--text-meta);
   }
 
   &__cta {

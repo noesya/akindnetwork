@@ -8,9 +8,14 @@
 // Centered, max-width-bounded page region. Default sits a page in the middle
 // of the viewport with breathing room top + bottom. Consumers can override
 // max-width (e.g. .me uses 720px) or the vertical rhythm.
+//
+// The vertical margin comes from a token (`--page-margin-y`) so it shrinks
+// at mobile breakpoints — see _responsive.scss. Without that, every page
+// got a 48px top margin on top of the .layout padding, which on mobile
+// reads as "huge empty band before anything happens".
 %page-container {
   max-width: var(--max-page);
-  margin: var(--space-7) auto;
+  margin: var(--page-margin-y) auto;
   width: 100%;
 }
 
@@ -29,7 +34,7 @@
 // space below them while inline labels want none.
 %caps-label {
   font-family: var(--font-sans);
-  font-size: 13px;
+  font-size: var(--text-sm);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--color-text-muted);
@@ -44,5 +49,5 @@
   font-family: var(--font-sans);
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  line-height: 1.4;
+  line-height: var(--leading-normal);
 }

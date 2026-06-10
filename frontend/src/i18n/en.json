@@ -118,8 +118,7 @@
     "account": "Account",
     "connectPod": "Connect my Pod",
     "connectPodDisabled": "Auth not configured — demo mode",
-    "logout": "Sign out",
-    "mockBadge": "Demo — mock data"
+    "logout": "Sign out"
   },
   "login": {
     "title": "Connect my Pod",

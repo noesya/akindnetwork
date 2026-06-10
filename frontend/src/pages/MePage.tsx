@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useGetList, useLogout } from 'ra-core';
 import { letters } from '../data/mock';
 import Avatar from '../components/Avatar';
+import DemoBanner from '../components/DemoBanner';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { isAuthConfigured } from '../providers/setup';
 import { toSlug } from '../lib/letterSlug';
@@ -50,14 +51,18 @@ export default function MePage() {
 
   return (
     <div className="me">
+      {/* Unified mock-mode signal: same <DemoBanner/> as /read, /write, /letter,
+        /u. /me used to render its own inline pill (`me__mock-badge`) — removed
+        for consistency. The banner sits above the profile card with a "Connect
+        my Pod" CTA, which beats the previous tiny grey pill at communicating
+        that they're in demo mode AND giving them the action to leave it. */}
+      {user.isMock && <DemoBanner />}
+
       <header className="me__header">
         <Avatar user={user} size="lg" />
         <div>
           <div className="me__name">{user.name}</div>
           <div className="me__webid">{user.webId}</div>
-          {user.isMock && (
-            <div className="me__mock-badge">{t('me.mockBadge')}</div>
-          )}
         </div>
       </header>
 

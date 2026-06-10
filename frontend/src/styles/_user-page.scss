@@ -18,13 +18,13 @@
 
   &__name {
     font-family: var(--font-serif);
-    font-size: 32px;
+    font-size: var(--text-h2);
   }
 
   &__bio {
     margin-top: var(--space-2);
-    font-size: 14px;
-    line-height: 1.5;
+    font-size: var(--text-sm);
+    line-height: var(--leading-normal);
     color: var(--color-text-muted);
   }
 
@@ -39,7 +39,7 @@
 
   &__item {
     font-family: var(--font-serif);
-    font-size: 20px;
+    font-size: var(--text-h4);
     padding: var(--space-3) 0;
     border-bottom: 1px solid var(--color-line);
     display: flex;
@@ -55,7 +55,7 @@
 
   &__item-meta {
     font-family: var(--font-sans);
-    font-size: 12px;
+    font-size: var(--text-meta);
     color: var(--color-text-muted);
   }
 }
