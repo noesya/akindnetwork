@@ -409,13 +409,13 @@ module.exports = {
   methods: {
     async _refreshEntry(ctx, letterUri, authorWebId) {
       try {
-        const { ok, status, body } = await ctx.call('pod-resources.get', {
+        const { ok, status: httpStatus, body } = await ctx.call('pod-resources.get', {
           resourceUri: letterUri,
           actorUri: authorWebId
         });
         if (!ok || !body) {
           this.logger.warn(
-            `kind-letters: could not fetch ${letterUri} to refresh index (status=${status})`
+            `kind-letters: could not fetch ${letterUri} to refresh index (httpStatus=${httpStatus})`
           );
           return;
         }
@@ -424,14 +424,20 @@ module.exports = {
         // the JSON-LD value here too: without it, a Pod returning
         // `{"kind:status": {"@value": "draft"}}` would slip past the
         // `=== 'draft'` check and get indexed as a draft.
-        const status = this._asString(body['kind:status']);
-        if (!status || status === 'draft') {
+        //
+        // `letterStatus` (not `status`) because `pod-resources.get` already
+        // destructures an HTTP `status` field from its result above —
+        // shadowing it confuses Node's strict-mode block scoping and
+        // crashes the whole service load (SyntaxError 'Identifier
+        // already declared'). Hard-learnt.
+        const letterStatus = this._asString(body['kind:status']);
+        if (!letterStatus || letterStatus === 'draft') {
           this._index.delete(letterUri);
           return;
         }
         this._upsertFromLetter(body, authorWebId);
         this.logger.info(
-          `kind-letters: indexed ${letterUri} (status=${status})`
+          `kind-letters: indexed ${letterUri} (status=${letterStatus})`
         );
       } catch (e) {
         this.logger.warn(

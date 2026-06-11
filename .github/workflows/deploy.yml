@@ -56,8 +56,30 @@ jobs:
           path: frontend/dist/
           retention-days: 7
 
+  # Parse-check the backend before deploying. The deploy script rsyncs the
+  # backend/ directory and triggers `docker compose up --build` — there's
+  # NO build/test step that would catch a SyntaxError before the container
+  # tries to start. A failed service load on the VPS exits the runner,
+  # Docker restarts it in a loop, Caddy returns 502 on every route. This
+  # job adds ~10 seconds to the deploy and saves that whole outage.
+  # See `ci.yml` for the equivalent PR-side check.
+  validate-backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Syntax-check backend JS
+        run: find . -maxdepth 3 -name '*.js' -not -path './node_modules/*' -print0 | xargs -0 -n1 node --check
+
   deploy:
-    needs: build-frontend
+    needs: [build-frontend, validate-backend]
     runs-on: ubuntu-latest
     environment:
       name: production

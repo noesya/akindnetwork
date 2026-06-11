@@ -42,3 +42,25 @@ jobs:
         env:
           VITE_FRONTEND_URL: https://akindnetwork.org
           VITE_DEFAULT_POD_PROVIDER: https://armoise.co
+
+  # Parse-check every backend JS file. The backend has no test/build step
+  # of its own (moleculer-runner consumes raw .js at boot), so without this
+  # gate a SyntaxError or duplicate `const` declaration only surfaces in
+  # production at container start — the runner exits, Docker restarts it
+  # in a loop, and Caddy returns 502 on every upstream route. `node --check`
+  # parses each file in strict mode without executing it, which catches
+  # exactly that family of errors in ~1 second.
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Syntax-check backend JS
+        run: find . -maxdepth 3 -name '*.js' -not -path './node_modules/*' -print0 | xargs -0 -n1 node --check
