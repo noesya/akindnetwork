@@ -432,6 +432,18 @@ module.exports = {
         // already declared'). Hard-learnt.
         const letterStatus = this._asString(body['kind:status']);
         if (!letterStatus || letterStatus === 'draft') {
+          // Explicit log on skip — without it the rehydrate counter says
+          // "indexed N items" while live entries stay smaller, with no way
+          // to tell whether the missing items are genuinely drafts vs.
+          // something whose status field _asString can't unwrap. The raw
+          // value (JSON-stringified) lands in the log so we can spot
+          // surprising shapes (`{@value: "published"}`, missing field,
+          // typed literals, etc).
+          this.logger.info(
+            `kind-letters: skip ${letterUri} (status=${
+              letterStatus || 'empty'
+            }, raw=${JSON.stringify(body['kind:status'])})`
+          );
           this._index.delete(letterUri);
           return;
         }
