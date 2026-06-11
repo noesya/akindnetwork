@@ -420,14 +420,18 @@ module.exports = {
           return;
         }
         // Drafts are excluded from the index — only the author needs them,
-        // and the author reads their own pod directly.
-        if (body['kind:status'] === 'draft' || !body['kind:status']) {
+        // and the author reads their own pod directly. `_asString` unwraps
+        // the JSON-LD value here too: without it, a Pod returning
+        // `{"kind:status": {"@value": "draft"}}` would slip past the
+        // `=== 'draft'` check and get indexed as a draft.
+        const status = this._asString(body['kind:status']);
+        if (!status || status === 'draft') {
           this._index.delete(letterUri);
           return;
         }
         this._upsertFromLetter(body, authorWebId);
         this.logger.info(
-          `kind-letters: indexed ${letterUri} (status=${body['kind:status']})`
+          `kind-letters: indexed ${letterUri} (status=${status})`
         );
       } catch (e) {
         this.logger.warn(
@@ -445,30 +449,86 @@ module.exports = {
       // are vanishingly unlikely — we treat the segment as a globally
       // unique short identifier and use it as the URL token.
       const uuid = uri.split('/').filter(Boolean).pop() || uri;
+      // Each scalar field is read through `_pickString` because SemApps Pods
+      // can return JSON-LD values in three different shapes for the same
+      // logical text:
+      //   - bare string          "foo"
+      //   - language-tagged map  { "@value": "foo", "@language": "fr" }
+      //   - array of those       [ "foo", { "@value": "bar", … } ]
+      // The previous code only handled (1) and dropped (2)/(3) silently,
+      // which left the index with empty title + content for any Pod that
+      // ships language-tagged JSON-LD — replies in particular ended up
+      // appearing as "Sans titre" everywhere in the UI.
       this._index.set(uri, {
         uri,
         uuid,
         authorWebId,
-        parentUri: letter.inReplyTo || letter['as:inReplyTo'] || null,
-        status: letter['kind:status'] || 'draft',
+        parentUri:
+          this._pickString(letter, 'inReplyTo', 'as:inReplyTo') || null,
+        status: this._pickString(letter, 'kind:status') || 'draft',
         publishedAt:
-          letter['as:published'] ||
-          letter['dc:modified'] ||
-          letter['dc:created'] ||
-          null,
-        title: letter.name || letter['as:name'] || '',
-        content: letter.content || letter['as:content'] || '',
-        language: letter['kind:language'] || 'fr',
-        sources: this._asArray(letter['kind:sources']),
-        approvedBy: this._asArray(letter['kind:approvedBy']),
+          this._pickString(
+            letter,
+            'as:published',
+            'dc:modified',
+            'dc:created'
+          ) || null,
+        title: this._pickString(letter, 'name', 'as:name') || '',
+        content: this._pickString(letter, 'content', 'as:content') || '',
+        language: this._pickString(letter, 'kind:language') || 'fr',
+        sources: this._asArray(letter['kind:sources']).map((v) =>
+          this._asString(v)
+        ),
+        approvedBy: this._asArray(letter['kind:approvedBy']).map((v) =>
+          this._asString(v)
+        ),
         rejectedBy: this._asArray(letter['kind:rejectedBy']),
-        assignedReviewers: this._asArray(letter['kind:assignedReviewers'])
+        assignedReviewers: this._asArray(
+          letter['kind:assignedReviewers']
+        ).map((v) => this._asString(v))
       });
     },
 
     _asArray(v) {
       if (v == null) return [];
       return Array.isArray(v) ? v : [v];
+    },
+
+    /**
+     * Unwrap a single JSON-LD scalar value into a plain string. Accepts:
+     *  - undefined/null → ''
+     *  - "foo"          → "foo"
+     *  - {@value, …}    → "@value"  (language tag ignored — we don't
+     *                                multi-language the index yet)
+     *  - {@id}          → "@id"     (e.g. as:inReplyTo as an IRI object)
+     *  - [first, …]     → recurse on the first element (good enough for
+     *                     our single-value fields)
+     */
+    _asString(v) {
+      if (v == null) return '';
+      if (typeof v === 'string') return v;
+      if (Array.isArray(v)) return v.length ? this._asString(v[0]) : '';
+      if (typeof v === 'object') {
+        if (typeof v['@value'] === 'string') return v['@value'];
+        if (typeof v['@id'] === 'string') return v['@id'];
+        if (typeof v.id === 'string') return v.id;
+      }
+      return '';
+    },
+
+    /**
+     * Read the first non-empty value among several candidate keys, then
+     * unwrap it via `_asString`. Lets callsites declare the same field
+     * once across its possible JSON-LD spellings (compact name, prefixed
+     * name) without spelling out the unwrap each time.
+     */
+    _pickString(obj, ...keys) {
+      for (const k of keys) {
+        const raw = obj?.[k];
+        const s = this._asString(raw).trim();
+        if (s) return s;
+      }
+      return '';
     }
   }
 };
