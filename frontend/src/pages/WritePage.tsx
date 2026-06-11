@@ -12,6 +12,7 @@ import { previewLabel } from '../lib/letterPreview';
 type PodLetter = {
   id: string;
   name?: string;
+  content?: string;
   'kind:status'?: 'draft' | 'pending-review' | 'published' | 'rejected';
   'dc:created'?: string;
   'dc:modified'?: string;
@@ -91,6 +92,10 @@ function DraftsAndReview({ hasOpenDraft }: { hasOpenDraft: boolean }) {
     const toPodShape = (l: typeof mockLetters[number]): PodLetter => ({
       id: l.id,
       name: l.title,
+      // Mock letters store body as paragraphs[] — flatten for the preview
+      // fallback so untitled drafts in the demo show their first words
+      // instead of "Sans titre".
+      content: l.paragraphs.join(' '),
       'kind:status': l.status === 'in-review' ? 'pending-review' : (l.status as any),
       'dc:created': l.createdAt,
       'dc:modified': l.publishedAt
